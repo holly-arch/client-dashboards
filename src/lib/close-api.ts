@@ -171,7 +171,7 @@ export async function fetchDashboardRawData(): Promise<{
     const contact = lead ? getContactFromLead(lead, opp.contact_id) : { name: 'Unknown', title: '' };
 
     if (statusLabel === 'Meeting Booked') {
-      const oppAny = opp as Record<string, unknown>;
+      const oppAny = opp as unknown as Record<string, unknown>;
       const subStatus = cfSubStatus ? (oppAny[`custom.${cfSubStatus}`] as string) || 'Upcoming' : 'Upcoming';
       const meetingDate = cfMeetingDate ? (oppAny[`custom.${cfMeetingDate}`] as string) || null : null;
 
