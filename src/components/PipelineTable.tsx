@@ -10,7 +10,7 @@ interface PipelineTableProps {
   statusCounts: Record<string, number>;
 }
 
-const STATUS_ORDER = ['Lead', 'Nurture', 'Lost', 'Closed/Lost', 'Meeting Booked', 'Engaged Lead'];
+const STATUS_ORDER = ['Lead', 'Nurture', 'Lost', 'Closed/Lost', 'Closed Lost', 'Meeting Booked', 'Engaged Lead'];
 
 export default function PipelineTable({ leads, statusCounts }: PipelineTableProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
