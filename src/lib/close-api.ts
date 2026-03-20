@@ -175,7 +175,7 @@ export async function fetchDashboardRawData(): Promise<{
       const rawSubStatus = cfSubStatus ? oppAny[`custom.${cfSubStatus}`] : null;
       const subStatus = rawSubStatus
         ? (Array.isArray(rawSubStatus) ? rawSubStatus[0] : String(rawSubStatus))
-        : 'Upcoming';
+        : '';
       const meetingDate = cfMeetingDate ? (oppAny[`custom.${cfMeetingDate}`] as string) || null : null;
 
       meetings.push({
