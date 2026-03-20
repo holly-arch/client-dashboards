@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:orrjo-client-dashboard.vercel.app)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developer.close.com)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --yes)",
+      "Bash(npx create-next-app@latest ca-client-dashboard --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --yes)"
+    ]
+  }
+}
