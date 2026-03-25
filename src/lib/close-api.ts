@@ -65,8 +65,33 @@ interface CloseCustomField {
   type: string;
 }
 
+// --- In-memory cache to avoid hitting Close API rate limits ---
+// Custom fields and statuses rarely change: cache for 10 minutes
+// Leads/contacts rarely change: cache for 5 minutes
+// Opportunities change frequently: cache for 60 seconds
+interface CacheEntry<T> { data: T; expiry: number; }
+const cache = new Map<string, CacheEntry<unknown>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = cache.get(key);
+  if (entry && Date.now() < entry.expiry) return entry.data as T;
+  return null;
+}
+
+function setCache<T>(key: string, data: T, ttlMs: number): T {
+  cache.set(key, { data, expiry: Date.now() + ttlMs });
+  return data;
+}
+
+const CACHE_TTL_CONFIG = 10 * 60 * 1000;  // 10 min for custom fields & statuses
+const CACHE_TTL_LEADS = 5 * 60 * 1000;    // 5 min for leads/contacts
+const CACHE_TTL_OPPS = 60 * 1000;         // 60s for opportunities
+
 // Auto-resolve custom field IDs by name
 async function resolveCustomFieldIds(): Promise<{ cfSubStatus: string; cfMeetingDate: string }> {
+  const cached = getCached<{ cfSubStatus: string; cfMeetingDate: string }>('customFieldIds');
+  if (cached) return cached;
+
   const res = await closeApiFetch<{ data: CloseCustomField[] }>('/custom_field/opportunity/');
 
   let cfSubStatus = '';
@@ -82,21 +107,27 @@ async function resolveCustomFieldIds(): Promise<{ cfSubStatus: string; cfMeeting
     }
   }
 
-  return { cfSubStatus, cfMeetingDate };
+  return setCache('customFieldIds', { cfSubStatus, cfMeetingDate }, CACHE_TTL_CONFIG);
 }
 
 // Fetch all opportunity statuses and build a lookup map
 async function fetchStatusMap(): Promise<Map<string, string>> {
+  const cached = getCached<Map<string, string>>('statusMap');
+  if (cached) return cached;
+
   const res = await closeApiFetch<CloseStatusResponse>('/status/opportunity/');
   const map = new Map<string, string>();
   for (const s of res.data) {
     map.set(s.id, s.label);
   }
-  return map;
+  return setCache('statusMap', map, CACHE_TTL_CONFIG);
 }
 
-// Fetch all opportunities with pagination
+// Fetch all opportunities with pagination (cached 60s)
 async function fetchAllOpportunities(): Promise<CloseOpportunity[]> {
+  const cached = getCached<CloseOpportunity[]>('opportunities');
+  if (cached) return cached;
+
   const all: CloseOpportunity[] = [];
   let skip = 0;
   const limit = 200;
@@ -111,7 +142,7 @@ async function fetchAllOpportunities(): Promise<CloseOpportunity[]> {
     skip += limit;
   }
 
-  return all;
+  return setCache('opportunities', all, CACHE_TTL_OPPS);
 }
 
 // Fetch a lead by ID (for company name and contact info)
@@ -119,8 +150,26 @@ async function fetchLead(leadId: string): Promise<CloseLead> {
   return closeApiFetch<CloseLead>(`/lead/${leadId}/?_fields=id,display_name,contacts`);
 }
 
-// Batch-resolve leads with deduplication
+// Batch-resolve leads with deduplication (cached 5 min)
 async function resolveLeads(leadIds: string[]): Promise<Map<string, CloseLead>> {
+  const cached = getCached<Map<string, CloseLead>>('leadMap');
+  if (cached) {
+    // Check if all requested leads are in the cache
+    const missing = leadIds.filter((id) => !cached.has(id));
+    if (missing.length === 0) return cached;
+    // Fetch only missing leads and merge into cache
+    const unique = [...new Set(missing)];
+    const batchSize = 10;
+    for (let i = 0; i < unique.length; i += batchSize) {
+      const batch = unique.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map((id) => fetchLead(id)));
+      for (const lead of results) {
+        cached.set(lead.id, lead);
+      }
+    }
+    return setCache('leadMap', cached, CACHE_TTL_LEADS);
+  }
+
   const unique = [...new Set(leadIds)];
   const map = new Map<string, CloseLead>();
 
@@ -133,7 +182,7 @@ async function resolveLeads(leadIds: string[]): Promise<Map<string, CloseLead>> 
     }
   }
 
-  return map;
+  return setCache('leadMap', map, CACHE_TTL_LEADS);
 }
 
 function getContactFromLead(lead: CloseLead, contactId: string | null): { name: string; title: string } {
