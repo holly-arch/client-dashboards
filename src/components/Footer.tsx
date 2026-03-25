@@ -4,7 +4,7 @@ export default function Footer() {
       <div>
         Powered by <span className="font-bold" style={{ color: '#ff2eeb' }}>ORRJO</span>
       </div>
-      <div>Data refreshes automatically every 30 seconds</div>
+      <div>Data refreshes automatically every 60 seconds</div>
     </footer>
   );
 }

@@ -13,15 +13,30 @@ async function closeApiFetch<T>(path: string, params?: Record<string, string>): 
   if (params) {
     Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   }
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Close API error ${res.status}: ${text}`);
+
+  // Retry up to 3 times on 429 rate limit errors
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: getAuthHeader(), 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (res.status === 429) {
+      // Wait based on Retry-After header, or use exponential backoff
+      const retryAfter = res.headers.get('retry-after');
+      const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : (attempt + 1) * 2000;
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Close API error ${res.status}: ${text}`);
+    }
+    return res.json();
   }
-  return res.json();
+
+  throw new Error(`Close API error 429: rate limited after 3 retries on ${path}`);
 }
 
 interface CloseStatusResponse {

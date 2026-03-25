@@ -10,7 +10,7 @@ import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
 import Footer from './Footer';
 
-const REFRESH_INTERVAL = 30_000;
+const REFRESH_INTERVAL = 60_000;
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
