@@ -269,7 +269,14 @@ export async function fetchDashboardRawData(): Promise<{
     return new Date(db).getTime() - new Date(da).getTime();
   });
 
-  leads.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Sort leads: Closed/Lost at bottom, then by date (most recent first)
+  const closedStatuses = new Set(['Closed/Lost', 'Closed Lost', 'Lost']);
+  leads.sort((a, b) => {
+    const aIsClosed = closedStatuses.has(a.status) ? 1 : 0;
+    const bIsClosed = closedStatuses.has(b.status) ? 1 : 0;
+    if (aIsClosed !== bIsClosed) return aIsClosed - bIsClosed;
+    return new Date(b.date).getTime() - new Date(a.date).getTime();
+  });
 
   return { meetings, leads };
 }
