@@ -54,7 +54,8 @@ async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]>
   if (cached && Date.now() < cached.expiry) return cached.data;
 
   const token = await getAccessToken();
-  const encodedTab = encodeURIComponent(tabName);
+  const quotedTab = `'${tabName}'`;
+  const encodedTab = encodeURIComponent(quotedTab);
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodedTab}?valueRenderOption=FORMATTED_VALUE`;
 
   const res = await fetch(url, {
