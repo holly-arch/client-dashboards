@@ -181,6 +181,19 @@ function getVal(row: string[], idx: number | undefined): string {
   return (row[idx] || '').trim();
 }
 
+// Some sheets use numbers for attendance: 1=Attended, 2=Awaiting Reschedule, 3=Cancelled, 4=Upcoming
+function normaliseAttendance(raw: string): string {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  switch (trimmed) {
+    case '1': return 'Attended';
+    case '2': return 'Awaiting Reschedule';
+    case '3': return 'Cancelled';
+    case '4': return 'Upcoming';
+    default: return trimmed;
+  }
+}
+
 export async function fetchDashboardRawData(): Promise<{
   meetings: MeetingRecord[];
   leads: LeadRecord[];
@@ -233,7 +246,7 @@ export async function fetchDashboardRawData(): Promise<{
         contactName,
         contactTitle,
         meetingDate,
-        subStatus: attendance,
+        subStatus: normaliseAttendance(attendance),
         dateCreated,
       });
     }
