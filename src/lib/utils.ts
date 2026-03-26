@@ -52,7 +52,7 @@ export function buildDashboardData(
 ): DashboardData {
   const range = getDateRange(period);
 
-  const filteredMeetings = meetings.filter((m) => isInRange(m.dateCreated, range));
+  const filteredMeetings = meetings.filter((m) => isInRange(m.meetingDate || m.dateCreated, range));
   const filteredLeads = leads.filter((l) => isInRange(l.date, range));
 
   // Compute status counts for leads
