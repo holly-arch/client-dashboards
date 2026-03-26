@@ -82,7 +82,7 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        <ROICard />
+        {clientName === 'Prime Secure' && <ROICard />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-2 gap-6">
