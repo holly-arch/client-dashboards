@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchDashboardRawData } from '@/lib/close-api';
+import { fetchDashboardRawData } from '@/lib/sheets-api';
 import { buildDashboardData } from '@/lib/utils';
 import { TimePeriod } from '@/lib/types';
 
