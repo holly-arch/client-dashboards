@@ -179,7 +179,7 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        {clientName === 'Prime Secure' && <ROICard />}
+        {['Prime Secure', 'Catapult Marketing', 'Evergreen Security', 'Select Group', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-2 gap-6">
