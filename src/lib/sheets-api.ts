@@ -79,8 +79,8 @@ async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]>
 
 const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
   name: ['name', 'contact name', 'contact', 'full name'],
-  firstName: ['first name', 'firstname', 'first', 'forename'],
-  surname: ['surname', 'last name', 'lastname', 'last', 'family name'],
+  firstName: ['first name', 'first name(s)', 'firstname', 'first', 'forename'],
+  surname: ['surname', 'last name', 'second name', 'lastname', 'last', 'family name'],
   company: ['company', 'company name', 'organisation', 'organization', 'business'],
   jobTitle: ['job title', 'title', 'role', 'position'],
   dateBooked: ['date booked', 'date'],
@@ -91,8 +91,8 @@ const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
 
 const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   name: ['name', 'contact name', 'contact', 'full name'],
-  firstName: ['first name', 'firstname', 'first', 'forename'],
-  surname: ['surname', 'last name', 'lastname', 'last', 'family name'],
+  firstName: ['first name', 'first name(s)', 'firstname', 'first', 'forename'],
+  surname: ['surname', 'last name', 'second name', 'lastname', 'last', 'family name'],
   company: ['company', 'company name', 'organisation', 'organization', 'business'],
   jobTitle: ['job title', 'title', 'role', 'position'],
   dateBooked: ['date booked', 'date'],
@@ -121,6 +121,11 @@ function detectColumns(headers: string[], matchers: Record<string, string[]>): R
 
   // If firstName found, remove generic name to avoid conflict
   if (mapping.firstName !== undefined) delete mapping.name;
+
+  // If dateBooked not found and first column header is empty, assume it's the date column
+  if (mapping.dateBooked === undefined && headers.length > 0 && headers[0].trim() === '') {
+    mapping.dateBooked = 0;
+  }
 
   return mapping;
 }
