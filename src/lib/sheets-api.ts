@@ -139,12 +139,26 @@ function parseDate(dateStr: string, timeStr?: string): string | null {
 
   let date: Date | null = null;
 
-  // DD/MM/YYYY or DD-MM-YYYY
+  // DD/MM/YYYY or DD-MM-YYYY (also handles D/M/YY, D/M/YYYY)
   const dmyMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
   if (dmyMatch) {
     let [, d, m, y] = dmyMatch;
     if (y.length === 2) y = (parseInt(y) > 50 ? '19' : '20') + y;
     date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+  }
+
+  // DD/MM (no year — assume current year, or previous year if date would be in future)
+  if (!date) {
+    const dmMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+    if (dmMatch) {
+      const [, d, m] = dmMatch;
+      const now = new Date();
+      let y = now.getFullYear();
+      const candidate = new Date(y, parseInt(m) - 1, parseInt(d));
+      // If the date is more than 30 days in the future, assume it was last year
+      if (candidate.getTime() > now.getTime() + 30 * 24 * 60 * 60 * 1000) y--;
+      date = new Date(y, parseInt(m) - 1, parseInt(d));
+    }
   }
 
   // YYYY-MM-DD
