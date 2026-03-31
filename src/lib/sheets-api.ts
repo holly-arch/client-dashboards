@@ -213,15 +213,19 @@ function normaliseAttendance(raw: string): string {
   }
 }
 
-export async function fetchDashboardRawData(): Promise<{
+export async function fetchDashboardRawData(
+  overrideSheetId?: string,
+  overrideMeetingsTab?: string,
+  overrideLeadsTab?: string,
+): Promise<{
   meetings: MeetingRecord[];
   leads: LeadRecord[];
 }> {
-  const sheetId = process.env.GOOGLE_SHEET_ID;
+  const sheetId = overrideSheetId || process.env.GOOGLE_SHEET_ID;
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID environment variable is not set');
 
-  const meetingsTab = process.env.MEETINGS_TAB || 'Meetings booked';
-  const leadsTab = process.env.LEADS_TAB || 'Leads';
+  const meetingsTab = overrideMeetingsTab || process.env.MEETINGS_TAB || 'Meetings booked';
+  const leadsTab = overrideLeadsTab || process.env.LEADS_TAB || 'Leads';
 
   // Fetch both tabs in parallel
   const [meetingRows, leadRows] = await Promise.all([

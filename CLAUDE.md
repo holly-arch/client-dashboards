@@ -35,7 +35,7 @@ Browser (60s polling) → /api/opportunities?period=all_time
 - **Opportunities with status "Meeting Booked"** go into the meetings table; all other statuses go into the leads/pipeline table.
 - **Attendance left blank** when the sheet field is empty — it does not default to "Upcoming".
 - **Closed/Lost leads sorted to bottom** of the pipeline table, with active leads (Lead, Nurture, Engaged Lead) shown first.
-- **ROI section hidden** on all dashboards except Prime Secure (conditional on `CLIENT_NAME`).
+- **ROI section** shown on 6 client dashboards: Prime Secure, Catapult Marketing, Evergreen Security, Select Group, Trust Hire, V360. Hidden on all others. Conditional on `CLIENT_NAME`.
 - **Password protection** via `DASHBOARD_PASSWORD` env var. Password stored in localStorage after first entry.
 
 ### Styling
