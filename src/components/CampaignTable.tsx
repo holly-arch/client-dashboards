@@ -46,8 +46,10 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
         <tbody>
           {clients.map((client, idx) => {
             const m = client.data.metrics;
+            // Group dashboard uses attended + 80% of (upcoming + awaiting reschedule) for sat*
+            const groupSat = m.meetingsAttended + Math.round((m.upcoming + m.awaitingReschedule) * 0.8);
             const attendPct = m.meetingsBooked > 0
-              ? Math.round((m.meetingsSat / m.meetingsBooked) * 100)
+              ? Math.round((groupSat / m.meetingsBooked) * 100)
               : 0;
 
             return (
@@ -62,7 +64,7 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
                 </td>
                 <td className="py-5 pr-6 font-semibold text-base" style={{ color: '#fafafa' }}>{client.name}</td>
                 <td className="py-5 pr-6" style={{ color: '#b0b0b0' }}>{m.meetingsBooked}</td>
-                <td className="py-5 pr-6" style={{ color: '#4ade80' }}>{m.meetingsSat}</td>
+                <td className="py-5 pr-6" style={{ color: '#4ade80' }}>{groupSat}</td>
                 <td className="py-5 pr-6">
                   <span
                     className="inline-block px-2.5 py-1 rounded-md text-xs font-semibold"

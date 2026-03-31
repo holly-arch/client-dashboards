@@ -170,6 +170,8 @@ export default function GroupDashboard() {
   if (!data) return null;
 
   const m = data.aggregate.metrics;
+  // Group dashboard uses attended + 80% of (upcoming + awaiting reschedule) for sat*
+  const groupSat = m.meetingsAttended + Math.round((m.upcoming + m.awaitingReschedule) * 0.8);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -204,8 +206,8 @@ export default function GroupDashboard() {
           />
           <MetricCard
             title="Total Meetings Sat*"
-            value={m.meetingsSat}
-            subtitle={`Includes 80% of ${m.upcoming} upcoming`}
+            value={groupSat}
+            subtitle={`Includes 80% of ${m.upcoming + m.awaitingReschedule} upcoming`}
             borderColorHex="#22c55e"
             icon={
               <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
