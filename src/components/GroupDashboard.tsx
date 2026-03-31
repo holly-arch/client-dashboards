@@ -4,10 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
-import ROICard from './ROICard';
+import GroupROICard from './GroupROICard';
 import MetricCard from './MetricCard';
 import CampaignTable from './CampaignTable';
-import Footer from './Footer';
 
 const REFRESH_INTERVAL = 60_000;
 const BRAND = '#ff2eeb';
@@ -188,7 +187,7 @@ export default function GroupDashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        <ROICard />
+        <GroupROICard />
 
         <div className="grid grid-cols-4 gap-4">
           <MetricCard
@@ -247,7 +246,14 @@ export default function GroupDashboard() {
         <CampaignTable clients={data.clients} />
       </main>
 
-      <Footer />
+      <footer className="flex items-center justify-between px-6 py-4 text-xs mt-auto" style={{ borderTop: '1px solid #1e1e1e', color: '#555' }}>
+        <div>
+          Powered by <span className="font-bold" style={{ color: '#ff2eeb' }}>ORRJO</span>
+          <span style={{ color: '#333' }}> • </span>
+          <span>{clientName}</span>
+        </div>
+        <div>Data refreshes automatically every 60 seconds</div>
+      </footer>
     </div>
   );
 }
