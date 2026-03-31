@@ -66,7 +66,7 @@ export function buildDashboardData(
   const upcoming = filteredMeetings.filter((m) => m.subStatus === 'Upcoming').length;
   const awaitingReschedule = filteredMeetings.filter((m) => m.subStatus === 'Awaiting Reschedule').length;
   const cancelled = filteredMeetings.filter((m) => m.subStatus === 'Cancelled').length;
-  const projected = Math.round(upcoming * 0.8);
+  const projected = Math.round((upcoming + awaitingReschedule) * 0.8);
   const meetingsSat = attended + projected;
 
   const metrics: DashboardMetrics = {
