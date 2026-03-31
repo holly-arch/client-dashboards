@@ -47,7 +47,7 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
           {clients.map((client, idx) => {
             const m = client.data.metrics;
             const attendPct = m.meetingsBooked > 0
-              ? Math.round((m.meetingsAttended / m.meetingsBooked) * 100)
+              ? Math.round((m.meetingsSat / m.meetingsBooked) * 100)
               : 0;
 
             return (
@@ -55,7 +55,7 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
                 <td className="py-5 pr-3">
                   <span
                     className="inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-bold"
-                    style={{ background: '#ff2eeb', color: '#fafafa' }}
+                    style={{ background: 'rgba(255,46,235,0.15)', color: '#ff2eeb', border: '1px solid rgba(255,46,235,0.3)' }}
                   >
                     {idx + 1}
                   </span>
