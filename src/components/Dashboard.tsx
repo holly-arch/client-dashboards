@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Client');
+  const [touchpoints, setTouchpoints] = useState<{ calls: number; linkedin: number; email: number; week?: string } | null>(null);
 
   // Check stored password on mount
   useEffect(() => {
@@ -106,7 +107,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetch('/api/config')
       .then((res) => res.json())
-      .then((cfg) => setClientName(cfg.clientName))
+      .then((cfg) => {
+        setClientName(cfg.clientName);
+        if (cfg.touchpoints) setTouchpoints(cfg.touchpoints);
+      })
       .catch(() => {});
   }, []);
 
@@ -181,7 +185,7 @@ export default function Dashboard() {
         </div>
 
         {['Prime Secure', 'Catapult Marketing', 'Evergreen Security', 'Select Group', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
-        {['Jua', 'myBasePay'].includes(clientName) && <TouchpointsCard />}
+        {['Jua', 'myBasePay'].includes(clientName) && <TouchpointsCard calls={touchpoints?.calls} linkedin={touchpoints?.linkedin} email={touchpoints?.email} week={touchpoints?.week} />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-2 gap-6">

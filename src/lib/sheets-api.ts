@@ -335,3 +335,38 @@ export async function fetchDashboardRawData(
 
   return { meetings, leads };
 }
+
+export interface TouchpointsData {
+  week: string;
+  calls: number;
+  linkedin: number;
+  email: number;
+}
+
+export async function fetchTouchpoints(): Promise<TouchpointsData | null> {
+  const sheetId = process.env.GOOGLE_SHEET_ID;
+  if (!sheetId) return null;
+
+  try {
+    const rows = await fetchSheet(sheetId, 'Touchpoints');
+    if (rows.length < 2) return null;
+
+    // Get the last row (most recent week)
+    const lastRow = rows[rows.length - 1];
+    const headers = rows[0].map((h: string) => h.toLowerCase().trim());
+
+    const weekIdx = headers.findIndex((h: string) => h.includes('week'));
+    const callsIdx = headers.findIndex((h: string) => h.includes('call'));
+    const linkedinIdx = headers.findIndex((h: string) => h.includes('linkedin'));
+    const emailIdx = headers.findIndex((h: string) => h.includes('email'));
+
+    return {
+      week: weekIdx >= 0 ? (lastRow[weekIdx] || '') : '',
+      calls: callsIdx >= 0 ? parseInt(lastRow[callsIdx] || '0') || 0 : 0,
+      linkedin: linkedinIdx >= 0 ? parseInt(lastRow[linkedinIdx] || '0') || 0 : 0,
+      email: emailIdx >= 0 ? parseInt(lastRow[emailIdx] || '0') || 0 : 0,
+    };
+  } catch {
+    return null;
+  }
+}

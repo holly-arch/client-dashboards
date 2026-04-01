@@ -1,8 +1,18 @@
-export default function TouchpointsCard() {
+interface TouchpointsCardProps {
+  calls?: number;
+  linkedin?: number;
+  email?: number;
+  week?: string;
+}
+
+export default function TouchpointsCard({ calls = 0, linkedin = 0, email = 0, week }: TouchpointsCardProps) {
   return (
     <div className="relative rounded-lg p-[2px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
       <div className="rounded-lg p-6" style={{ background: '#141414' }}>
-        <h3 className="text-xs font-bold tracking-widest mb-5" style={{ color: '#ff2eeb' }}>WEEKLY TOUCHPOINTS</h3>
+        <div className="flex items-baseline gap-3 mb-5">
+          <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WEEKLY TOUCHPOINTS</h3>
+          {week && <span className="text-xs" style={{ color: '#555' }}>w/c {week}</span>}
+        </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
@@ -15,7 +25,7 @@ export default function TouchpointsCard() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Calls</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>0</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{calls}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -29,7 +39,7 @@ export default function TouchpointsCard() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>LinkedIn</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>0</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{linkedin}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -43,7 +53,7 @@ export default function TouchpointsCard() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Email</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>0</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{email}</p>
             </div>
           </div>
           <div />
