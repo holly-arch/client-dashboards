@@ -5,6 +5,7 @@ import { DashboardData, TimePeriod } from '@/lib/types';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
 import ROICard from './ROICard';
+import TouchpointsCard from './TouchpointsCard';
 import MetricCards from './MetricCards';
 import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
@@ -180,6 +181,7 @@ export default function Dashboard() {
         </div>
 
         {['Prime Secure', 'Catapult Marketing', 'Evergreen Security', 'Select Group', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
+        {clientName === 'Jua' && <TouchpointsCard />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-2 gap-6">
