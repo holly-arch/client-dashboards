@@ -23,7 +23,7 @@ export default function OutreachTable({ meetings }: OutreachTableProps) {
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
-              <th className="text-left py-2 pr-3 font-medium">Date Booked</th>
+              <th className="text-left py-2 pr-3 font-medium">Meeting Date</th>
               <th className="text-left py-2 font-medium">Status</th>
             </tr>
           </thead>
@@ -33,7 +33,7 @@ export default function OutreachTable({ meetings }: OutreachTableProps) {
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{m.company}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{m.contactName}</td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{m.contactTitle}</td>
-                <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(m.dateCreated)}</td>
+                <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(m.meetingDate)}</td>
                 <td className="py-3"><StatusBadge status={m.subStatus} /></td>
               </tr>
             ))}
