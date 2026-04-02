@@ -319,12 +319,8 @@ export async function fetchDashboardRawData(
     }
   }
 
-  // Sort meetings by meeting date (most recent first), fallback to dateCreated
-  meetings.sort((a, b) => {
-    const da = a.meetingDate || a.dateCreated;
-    const db = b.meetingDate || b.dateCreated;
-    return new Date(db).getTime() - new Date(da).getTime();
-  });
+  // Sort meetings by Date Booked (most recent first)
+  meetings.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
 
   // Sort leads: Closed/Lost at bottom, then by date (most recent first)
   const closedStatuses = new Set(['closed/lost', 'closed lost', 'lost']);
