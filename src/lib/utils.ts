@@ -1,4 +1,4 @@
-import { MeetingRecord, LeadRecord, DashboardData, DashboardMetrics, TimePeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, DashboardData, DashboardMetrics, TimePeriod } from './types';
 
 function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
   if (period === 'all_time') return null;
@@ -48,7 +48,8 @@ export function formatDate(dateStr: string | null): string {
 export function buildDashboardData(
   meetings: MeetingRecord[],
   leads: LeadRecord[],
-  period: TimePeriod
+  period: TimePeriod,
+  touchpointRows?: TouchpointRow[],
 ): DashboardData {
   const range = getDateRange(period);
 
@@ -81,11 +82,23 @@ export function buildDashboardData(
     leadsConvertedToMeetings: filteredMeetings.length,
   };
 
+  // Filter and sum touchpoints if provided
+  let touchpoints: { calls: number; linkedin: number; email: number } | undefined;
+  if (touchpointRows && touchpointRows.length > 0) {
+    const filtered = touchpointRows.filter((t) => isInRange(t.week, range));
+    touchpoints = {
+      calls: filtered.reduce((sum, t) => sum + t.calls, 0),
+      linkedin: filtered.reduce((sum, t) => sum + t.linkedin, 0),
+      email: filtered.reduce((sum, t) => sum + t.email, 0),
+    };
+  }
+
   return {
     meetings: filteredMeetings,
     leads: filteredLeads,
     statusCounts,
     metrics,
+    touchpoints,
     lastUpdated: new Date().toISOString(),
   };
 }

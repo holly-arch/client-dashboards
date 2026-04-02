@@ -31,10 +31,18 @@ export interface DashboardMetrics {
   leadsConvertedToMeetings: number;
 }
 
+export interface TouchpointRow {
+  week: string; // ISO date string for the week commencing date
+  calls: number;
+  linkedin: number;
+  email: number;
+}
+
 export interface DashboardData {
   meetings: MeetingRecord[];
   leads: LeadRecord[];
   statusCounts: Record<string, number>;
   metrics: DashboardMetrics;
+  touchpoints?: { calls: number; linkedin: number; email: number };
   lastUpdated: string;
 }

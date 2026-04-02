@@ -14,8 +14,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid period' }, { status: 400 });
     }
 
-    const { meetings, leads } = await fetchDashboardRawData();
-    const data = buildDashboardData(meetings, leads, period);
+    const { meetings, leads, touchpointRows } = await fetchDashboardRawData();
+    const data = buildDashboardData(meetings, leads, period, touchpointRows);
 
     return NextResponse.json(data);
   } catch (error) {

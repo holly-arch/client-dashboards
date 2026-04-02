@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -220,6 +220,7 @@ export async function fetchDashboardRawData(
 ): Promise<{
   meetings: MeetingRecord[];
   leads: LeadRecord[];
+  touchpointRows: TouchpointRow[];
 }> {
   const sheetId = overrideSheetId || process.env.GOOGLE_SHEET_ID;
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID environment variable is not set');
@@ -227,10 +228,11 @@ export async function fetchDashboardRawData(
   const meetingsTab = overrideMeetingsTab || process.env.MEETINGS_TAB || 'Meetings booked';
   const leadsTab = overrideLeadsTab || process.env.LEADS_TAB || 'Leads';
 
-  // Fetch both tabs in parallel
-  const [meetingRows, leadRows] = await Promise.all([
+  // Fetch all tabs in parallel (Touchpoints tab is optional — fail silently)
+  const [meetingRows, leadRows, touchpointRows] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
+    fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
   ]);
 
   // --- Process Meetings ---
@@ -333,7 +335,30 @@ export async function fetchDashboardRawData(
     return new Date(b.date).getTime() - new Date(a.date).getTime();
   });
 
-  return { meetings, leads };
+  // --- Process Touchpoints ---
+  const parsedTouchpoints: TouchpointRow[] = [];
+  if (touchpointRows.length > 1) {
+    const tHeaders = touchpointRows[0].map((h: string) => h.toLowerCase().trim());
+    const weekIdx = tHeaders.findIndex((h: string) => h.includes('week'));
+    const callsIdx = tHeaders.findIndex((h: string) => h.includes('call'));
+    const linkedinIdx = tHeaders.findIndex((h: string) => h.includes('linkedin'));
+    const emailIdx = tHeaders.findIndex((h: string) => h.includes('email'));
+
+    for (let i = 1; i < touchpointRows.length; i++) {
+      const row = touchpointRows[i];
+      const weekStr = weekIdx >= 0 ? (row[weekIdx] || '').trim() : '';
+      const week = parseDate(weekStr);
+      if (!week) continue;
+      parsedTouchpoints.push({
+        week,
+        calls: callsIdx >= 0 ? parseInt(row[callsIdx] || '0') || 0 : 0,
+        linkedin: linkedinIdx >= 0 ? parseInt(row[linkedinIdx] || '0') || 0 : 0,
+        email: emailIdx >= 0 ? parseInt(row[emailIdx] || '0') || 0 : 0,
+      });
+    }
+  }
+
+  return { meetings, leads, touchpointRows: parsedTouchpoints };
 }
 
 export interface TouchpointsData {

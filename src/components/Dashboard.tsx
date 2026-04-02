@@ -185,7 +185,8 @@ export default function Dashboard() {
         </div>
 
         {['Prime Secure', 'Catapult Marketing', 'Evergreen Security', 'Select Group', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
-        {['Jua', 'myBasePay'].includes(clientName) && <TouchpointsCard calls={touchpoints?.calls} linkedin={touchpoints?.linkedin} email={touchpoints?.email} week={touchpoints?.week} />}
+        {clientName === 'Jua' && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+        {clientName === 'myBasePay' && <TouchpointsCard calls={touchpoints?.calls} linkedin={touchpoints?.linkedin} email={touchpoints?.email} week={touchpoints?.week} />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-2 gap-6">
