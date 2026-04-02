@@ -34,13 +34,14 @@ function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
 }
 
 function isInRange(dateStr: string, range: { start: Date; end: Date } | null): boolean {
-  if (!range) return true;
+  if (!range) return true; // All Time — include everything
+  if (!dateStr) return false; // No date — only show in All Time
   const d = new Date(dateStr);
   return d >= range.start && d <= range.end;
 }
 
 export function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'N/A';
+  if (!dateStr) return '';
   const d = new Date(dateStr);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }

@@ -306,7 +306,7 @@ export async function fetchDashboardRawData(
       // Skip Meeting Booked rows on the leads tab (they belong in meetings)
       if (status.toLowerCase() === 'meeting booked') continue;
 
-      const date = parseDate(dateBooked) || new Date().toISOString();
+      const date = parseDate(dateBooked) || '';
 
       leads.push({
         id: `l-${i}`,
