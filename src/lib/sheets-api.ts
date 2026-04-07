@@ -17,7 +17,7 @@ async function getAccessToken(): Promise<string> {
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
   const claims = Buffer.from(JSON.stringify({
     iss: email,
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
     aud: 'https://oauth2.googleapis.com/token',
     iat: now,
     exp: now + 3600,
@@ -87,6 +87,8 @@ const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
   meetingDate: ['meeting date'],
   meetingTime: ['meeting time', 'time'],
   attendance: ['attendance', 'status'],
+  shortStatus: ['short status'],
+  partnerStatus: ['partner status'],
 };
 
 const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -97,6 +99,7 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   jobTitle: ['job title', 'title', 'role', 'position'],
   dateBooked: ['date booked', 'date'],
   status: ['status', 'opportunity status', 'pipeline status'],
+  lytxNotes: ['lytx notes'],
 };
 
 function detectColumns(headers: string[], matchers: Record<string, string[]>): Record<string, number> {
@@ -264,6 +267,8 @@ export async function fetchDashboardRawData(
 
       const dateCreated = parseDate(dateBooked) || new Date().toISOString();
       const meetingDate = parseDate(meetingDateStr, meetingTimeStr);
+      const shortStatus = getVal(row, mCols.shortStatus);
+      const partnerStatus = getVal(row, mCols.partnerStatus);
 
       meetings.push({
         id: `m-${i}`,
@@ -273,6 +278,9 @@ export async function fetchDashboardRawData(
         meetingDate,
         subStatus: normaliseAttendance(attendance),
         dateCreated,
+        sheetRowIndex: i + 1, // 1-indexed sheet row (i=1 for first data row = sheet row 2)
+        ...(shortStatus !== undefined && mCols.shortStatus !== undefined ? { shortStatus } : {}),
+        ...(partnerStatus !== undefined && mCols.partnerStatus !== undefined ? { partnerStatus } : {}),
       });
     }
   }
@@ -307,6 +315,7 @@ export async function fetchDashboardRawData(
       if (status.toLowerCase() === 'meeting booked') continue;
 
       const date = parseDate(dateBooked) || '';
+      const lytxNotes = getVal(row, lCols.lytxNotes);
 
       leads.push({
         id: `l-${i}`,
@@ -315,6 +324,8 @@ export async function fetchDashboardRawData(
         contactTitle,
         date,
         status,
+        sheetRowIndex: i + 1,
+        ...(lytxNotes !== undefined && lCols.lytxNotes !== undefined ? { lytxNotes } : {}),
       });
     }
   }
@@ -390,4 +401,67 @@ export async function fetchTouchpoints(): Promise<TouchpointsData | null> {
   } catch {
     return null;
   }
+}
+
+// --- Writing to Google Sheets ---
+
+// Column letter helper (0=A, 1=B, ..., 25=Z, 26=AA, etc.)
+function colLetter(idx: number): string {
+  let letter = '';
+  let n = idx;
+  while (n >= 0) {
+    letter = String.fromCharCode((n % 26) + 65) + letter;
+    n = Math.floor(n / 26) - 1;
+  }
+  return letter;
+}
+
+export async function writeCell(
+  sheetId: string,
+  tabName: string,
+  row: number,
+  col: number,
+  value: string,
+): Promise<void> {
+  const token = await getAccessToken();
+  const cellRef = `${colLetter(col)}${row}`;
+  const range = encodeURIComponent(`'${tabName}'!${cellRef}`);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?valueInputOption=RAW`;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ values: [[value]] }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Google Sheets write error ${res.status}: ${text}`);
+  }
+
+  // Invalidate cache for this tab
+  invalidateCache(sheetId, tabName);
+}
+
+export function invalidateCache(sheetId: string, tabName: string): void {
+  const cacheKey = `${sheetId}:${tabName}`;
+  sheetCache.delete(cacheKey);
+}
+
+// Resolve column index for an editable field by reading the sheet headers
+export async function resolveColumnIndex(
+  sheetId: string,
+  tabName: string,
+  fieldName: string,
+): Promise<number> {
+  const rows = await fetchSheet(sheetId, tabName);
+  if (rows.length === 0) throw new Error('Sheet is empty');
+
+  const headers = rows[0].map((h: string) => h.toLowerCase().trim());
+  const idx = headers.findIndex((h: string) => h === fieldName.toLowerCase());
+  if (idx === -1) throw new Error(`Column "${fieldName}" not found in sheet`);
+  return idx;
 }

@@ -8,6 +8,9 @@ export interface MeetingRecord {
   meetingDate: string | null;
   subStatus: string; // Upcoming, Awaiting Reschedule, Attended, Cancelled
   dateCreated: string;
+  sheetRowIndex?: number;
+  shortStatus?: string;
+  partnerStatus?: string;
 }
 
 export interface LeadRecord {
@@ -17,6 +20,8 @@ export interface LeadRecord {
   contactTitle: string;
   date: string;
   status: string; // Lead, Nurture, Engaged Lead, Closed/Lost, Meeting Booked
+  sheetRowIndex?: number;
+  lytxNotes?: string;
 }
 
 export interface DashboardMetrics {

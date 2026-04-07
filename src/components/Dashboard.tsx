@@ -185,8 +185,8 @@ export default function Dashboard() {
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <OutreachTable meetings={data.meetings} />
-          <PipelineTable leads={data.leads} statusCounts={data.statusCounts} />
+          <OutreachTable meetings={data.meetings} onRefresh={fetchData} />
+          <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} />
         </div>
       </main>
 

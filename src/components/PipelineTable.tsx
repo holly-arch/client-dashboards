@@ -4,18 +4,23 @@ import { useState } from 'react';
 import { LeadRecord } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 import StatusBadge from './StatusBadge';
+import EditableText from './EditableText';
 
 interface PipelineTableProps {
   leads: LeadRecord[];
   statusCounts: Record<string, number>;
+  onRefresh?: () => void;
 }
 
 const STATUS_ORDER = ['Lead', 'Nurture', 'Lost', 'Closed/Lost', 'Closed Lost', 'Meeting Booked', 'Engaged Lead'];
 
-export default function PipelineTable({ leads, statusCounts }: PipelineTableProps) {
+export default function PipelineTable({ leads, statusCounts, onRefresh }: PipelineTableProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const filteredLeads = activeFilter ? leads.filter((l) => l.status === activeFilter) : leads;
+
+  // Detect if editable columns exist
+  const hasLytxNotes = leads.some((l) => l.lytxNotes !== undefined);
 
   return (
     <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -50,7 +55,7 @@ export default function PipelineTable({ leads, statusCounts }: PipelineTableProp
       </div>
 
       {/* Desktop table */}
-      <div className="hidden md:block overflow-y-auto flex-1 max-h-96">
+      <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 max-h-96">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
@@ -58,7 +63,8 @@ export default function PipelineTable({ leads, statusCounts }: PipelineTableProp
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
               <th className="text-left py-2 pr-3 font-medium">Date</th>
-              <th className="text-left py-2 font-medium">Status</th>
+              <th className="text-left py-2 pr-3 font-medium">Status</th>
+              {hasLytxNotes && <th className="text-left py-2 font-medium">Lytx Notes</th>}
             </tr>
           </thead>
           <tbody className="divide-subtle">
@@ -68,12 +74,17 @@ export default function PipelineTable({ leads, statusCounts }: PipelineTableProp
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{l.contactName}</td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{l.contactTitle}</td>
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(l.date)}</td>
-                <td className="py-3"><StatusBadge status={l.status} /></td>
+                <td className="py-3 pr-3"><StatusBadge status={l.status} /></td>
+                {hasLytxNotes && (
+                  <td className="py-3">
+                    <EditableText value={l.lytxNotes || ''} sheetRowIndex={l.sheetRowIndex!} field="lytxNotes" placeholder="Add note..." onSaved={onRefresh} />
+                  </td>
+                )}
               </tr>
             ))}
             {filteredLeads.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
+                <td colSpan={5 + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
               </tr>
             )}
           </tbody>
@@ -91,6 +102,12 @@ export default function PipelineTable({ leads, statusCounts }: PipelineTableProp
             <p className="text-sm" style={{ color: '#b0b0b0' }}>{l.contactName}</p>
             <p className="text-xs truncate" style={{ color: '#888' }}>{l.contactTitle}</p>
             {l.date && <p className="text-xs mt-1" style={{ color: '#666' }}>{formatDate(l.date)}</p>}
+            {hasLytxNotes && (
+              <div className="mt-2 pt-2" style={{ borderTop: '1px solid #252525' }}>
+                <span className="text-xs" style={{ color: '#666' }}>Lytx Notes:</span>
+                <EditableText value={l.lytxNotes || ''} sheetRowIndex={l.sheetRowIndex!} field="lytxNotes" placeholder="Add note..." onSaved={onRefresh} />
+              </div>
+            )}
           </div>
         ))}
         {filteredLeads.length === 0 && (
