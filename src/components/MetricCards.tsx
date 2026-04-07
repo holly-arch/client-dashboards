@@ -10,7 +10,7 @@ const BRAND = '#ff2eeb';
 export default function MetricCards({ metrics }: MetricCardsProps) {
   return (
     <div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           title="Meetings Booked"
           value={metrics.meetingsBooked}

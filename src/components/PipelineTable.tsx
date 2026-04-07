@@ -49,8 +49,8 @@ export default function PipelineTable({ leads, statusCounts }: PipelineTableProp
         })}
       </div>
 
-      <div className="overflow-y-auto flex-1 max-h-96">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto overflow-y-auto flex-1 max-h-96">
+        <table className="w-full text-sm min-w-[600px]">
           <thead>
             <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
               <th className="text-left py-2 pr-3 font-medium">Company</th>

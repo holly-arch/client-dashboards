@@ -17,12 +17,12 @@ interface TimeFilterProps {
 
 export default function TimeFilter({ selected, onChange }: TimeFilterProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {PERIODS.map((p) => (
         <button
           key={p.value}
           onClick={() => onChange(p.value)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+          className={`px-3 md:px-4 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors ${
             selected === p.value
               ? 'text-white'
               : 'bg-gray-800 text-gray-300 hover:bg-gray-700'

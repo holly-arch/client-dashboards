@@ -30,7 +30,8 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
         </div>
       </div>
 
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto">
+      <table className="w-full text-sm min-w-[700px]">
         <thead>
           <tr className="text-xs uppercase tracking-wider" style={{ color: '#555', borderBottom: '1px solid #252525' }}>
             <th className="text-left pb-4 pr-3 font-medium w-10"></th>
@@ -95,6 +96,7 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

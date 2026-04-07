@@ -11,7 +11,7 @@ interface MetricCardProps {
 export default function MetricCard({ title, value, subtitle, icon, borderColorHex }: MetricCardProps) {
   return (
     <div
-      className="rounded-lg p-5"
+      className="rounded-lg p-4 md:p-5"
       style={{
         background: '#141414',
         border: '1px solid #252525',

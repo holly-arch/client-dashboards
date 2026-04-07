@@ -177,8 +177,8 @@ export default function GroupDashboard() {
     <div className="flex flex-col min-h-screen">
       <Header lastUpdated={data.lastUpdated} clientName={clientName} />
 
-      <main className="flex-1 px-6 py-6 space-y-6">
-        <div className="flex items-end justify-between">
+      <main className="flex-1 px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>GROUP OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{clientName}</h1>
@@ -191,7 +191,7 @@ export default function GroupDashboard() {
 
         <GroupROICard />
 
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <MetricCard
             title="Total Meetings Booked"
             value={m.meetingsBooked}
@@ -248,7 +248,7 @@ export default function GroupDashboard() {
         <CampaignTable clients={data.clients} />
       </main>
 
-      <footer className="flex items-center justify-between px-6 py-4 text-xs mt-auto" style={{ borderTop: '1px solid #1e1e1e', color: '#555' }}>
+      <footer className="flex flex-col sm:flex-row items-center justify-between gap-1 px-4 md:px-6 py-4 text-xs mt-auto" style={{ borderTop: '1px solid #1e1e1e', color: '#555' }}>
         <div>
           Powered by <span className="font-bold" style={{ color: '#ff2eeb' }}>ORRJO</span>
           <span style={{ color: '#333' }}> • </span>

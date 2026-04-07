@@ -11,7 +11,7 @@ export default function Header({ lastUpdated, clientName }: HeaderProps) {
     : '--:--';
 
   return (
-    <header className="flex items-center justify-between px-8 py-5" style={{ borderBottom: '1px solid #1e1e1e' }}>
+    <header className="flex items-center justify-between px-4 md:px-8 py-4 md:py-5" style={{ borderBottom: '1px solid #1e1e1e' }}>
       <div className="flex items-center gap-4">
         <span className="text-2xl font-bold tracking-tight">
           <span style={{ color: '#ff2eeb' }}>ORR</span>

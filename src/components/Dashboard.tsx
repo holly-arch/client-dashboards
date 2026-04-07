@@ -171,8 +171,8 @@ export default function Dashboard() {
     <div className="flex flex-col min-h-screen">
       <Header lastUpdated={data.lastUpdated} clientName={clientName} />
 
-      <main className="flex-1 px-6 py-6 space-y-6">
-        <div className="flex items-end justify-between">
+      <main className="flex-1 px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
           <div>
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>Campaign Dashboard</h1>
@@ -184,7 +184,7 @@ export default function Dashboard() {
         {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <OutreachTable meetings={data.meetings} />
           <PipelineTable leads={data.leads} statusCounts={data.statusCounts} />
         </div>

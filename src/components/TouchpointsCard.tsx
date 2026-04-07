@@ -8,12 +8,12 @@ interface TouchpointsCardProps {
 export default function TouchpointsCard({ calls = 0, linkedin = 0, email = 0, week }: TouchpointsCardProps) {
   return (
     <div className="relative rounded-lg p-[2px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
-      <div className="rounded-lg p-6" style={{ background: '#141414' }}>
+      <div className="rounded-lg p-4 md:p-6" style={{ background: '#141414' }}>
         <div className="flex items-baseline gap-3 mb-5">
           <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WEEKLY TOUCHPOINTS</h3>
           {week && <span className="text-xs" style={{ color: '#555' }}>w/c {week}</span>}
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:justify-between">
           <div className="flex items-center gap-4">
             <div
               className="w-11 h-11 rounded-lg flex items-center justify-center"
@@ -56,7 +56,6 @@ export default function TouchpointsCard({ calls = 0, linkedin = 0, email = 0, we
               <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{email}</p>
             </div>
           </div>
-          <div />
         </div>
       </div>
     </div>
