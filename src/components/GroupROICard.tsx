@@ -13,7 +13,7 @@ export default function GroupROICard() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Total Revenue Generated</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>N/A</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>£36,900</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
