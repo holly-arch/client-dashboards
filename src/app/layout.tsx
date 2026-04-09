@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ORRJO | Campaign Dashboard",
   description: "Campaign performance dashboard powered by ORRJO",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
