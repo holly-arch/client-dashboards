@@ -180,7 +180,9 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        {['Prime Secure', 'Catapult Marketing', 'Evergreen Security', 'Select Group', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
+        {clientName === 'Select Group' && <ROICard revenue="£18,000" />}
+        {clientName === 'Catapult Marketing' && <ROICard revenue="£18,900" />}
+        {['Prime Secure', 'Evergreen Security', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
         {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 

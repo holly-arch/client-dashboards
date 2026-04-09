@@ -1,4 +1,9 @@
-export default function ROICard() {
+interface ROICardProps {
+  revenue?: string;
+  pipeline?: string;
+}
+
+export default function ROICard({ revenue = 'N/A', pipeline = 'N/A' }: ROICardProps) {
   return (
     <div className="relative rounded-lg p-[2px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
       <div className="rounded-lg p-4 md:p-6" style={{ background: '#141414' }}>
@@ -13,7 +18,7 @@ export default function ROICard() {
             </div>
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Revenue Generated</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>N/A</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{revenue}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -30,7 +35,7 @@ export default function ROICard() {
             <div>
               <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Pipeline Value</p>
               <p className="text-[10px]" style={{ color: '#555' }}>(Based on average order value)</p>
-              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>N/A</p>
+              <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{pipeline}</p>
             </div>
           </div>
         </div>
