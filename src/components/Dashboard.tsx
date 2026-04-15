@@ -182,7 +182,16 @@ export default function Dashboard() {
 
         {clientName === 'Select Group' && <ROICard revenue="£18,000" />}
         {clientName === 'Catapult Marketing' && <ROICard revenue="£18,900" />}
-        {['Prime Secure', 'Evergreen Security', 'Trust Hire', 'V360'].includes(clientName) && <ROICard />}
+        {['Prime Secure', 'Evergreen Security', 'V360'].includes(clientName) && <ROICard />}
+        {clientName === 'Trust Hire' && (
+          <ROICard
+            revenue="£34,280"
+            revenueNote="YTL"
+            pipeline="£180,490"
+            pipelineNote="YTL £59,240 + Lancer Scott £121,250"
+            pipelineCaption=""
+          />
+        )}
         {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 
