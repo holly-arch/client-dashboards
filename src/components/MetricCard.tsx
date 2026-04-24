@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 
 interface MetricCardProps {
   title: string;
-  value: number;
+  value: number | string;
   subtitle: string;
   icon: ReactNode;
   borderColorHex: string;

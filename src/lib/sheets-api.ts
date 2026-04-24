@@ -48,7 +48,7 @@ interface SheetCache { data: string[][]; expiry: number; }
 const sheetCache = new Map<string, SheetCache>();
 const CACHE_TTL = 60_000; // 60 seconds
 
-async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]> {
+export async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]> {
   const cacheKey = `${sheetId}:${tabName}`;
   const cached = sheetCache.get(cacheKey);
   if (cached && Date.now() < cached.expiry) return cached.data;
@@ -135,7 +135,7 @@ function detectColumns(headers: string[], matchers: Record<string, string[]>): R
 
 // --- Date Parsing ---
 
-function parseDate(dateStr: string, timeStr?: string): string | null {
+export function parseDate(dateStr: string, timeStr?: string): string | null {
   if (!dateStr) return null;
   const trimmed = dateStr.trim();
   if (!trimmed) return null;
