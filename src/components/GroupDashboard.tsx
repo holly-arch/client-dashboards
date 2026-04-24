@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
+import { getGroupRoi } from '@/lib/client-revenues';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
 import GroupROICard from './GroupROICard';
@@ -170,8 +171,7 @@ export default function GroupDashboard() {
   if (!data) return null;
 
   const m = data.aggregate.metrics;
-  // Group dashboard uses attended + 80% of (upcoming + awaiting reschedule) for sat*
-  const groupSat = m.meetingsAttended + Math.round((m.upcoming + m.awaitingReschedule) * 0.8);
+  const groupRoi = getGroupRoi(data.clients.map((c) => c.name));
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -189,7 +189,7 @@ export default function GroupDashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        <GroupROICard />
+        <GroupROICard revenue={groupRoi.revenue} pipeline={groupRoi.pipeline} />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <MetricCard
@@ -206,8 +206,8 @@ export default function GroupDashboard() {
           />
           <MetricCard
             title="Total Meetings Sat*"
-            value={groupSat}
-            subtitle={`Includes 80% of ${m.upcoming + m.awaitingReschedule} upcoming`}
+            value={m.meetingsSat}
+            subtitle={`Includes 80% of ${m.upcoming} upcoming`}
             borderColorHex="#22c55e"
             icon={
               <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

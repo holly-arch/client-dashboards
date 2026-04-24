@@ -47,8 +47,7 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
         <tbody>
           {clients.map((client, idx) => {
             const m = client.data.metrics;
-            // Group dashboard uses attended + 80% of (upcoming + awaiting reschedule) for sat*
-            const groupSat = m.meetingsAttended + Math.round((m.upcoming + m.awaitingReschedule) * 0.8);
+            const groupSat = m.meetingsSat;
             const attendPct = m.meetingsBooked > 0
               ? Math.round((groupSat / m.meetingsBooked) * 100)
               : 0;

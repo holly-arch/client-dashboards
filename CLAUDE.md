@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is a **multi-tenant campaign dashboard** built with Next.js 16 (App Router). A single codebase is deployed as 18 separate Vercel projects, one per client. Each deployment is configured via environment variables: `GOOGLE_SHEET_ID`, `CLIENT_NAME`, `DASHBOARD_PASSWORD`, and Google service account credentials.
+This is a **multi-tenant campaign dashboard** built with Next.js 16 (App Router). A single codebase is deployed as 20 separate Vercel projects (19 individual clients + 1 group dashboard). Each deployment is configured via environment variables: `GOOGLE_SHEET_ID`, `CLIENT_NAME`, `DASHBOARD_PASSWORD`, and Google service account credentials.
 
 ### Data Flow
 
@@ -31,11 +31,12 @@ Browser (60s polling) → /api/opportunities?period=all_time
 - **JWT auth with no external dependencies.** Google Sheets API auth uses a self-signed JWT (Node.js `crypto` module), exchanged for an access token. No Google SDK needed.
 - **Caching**: Sheet data cached 60s, OAuth token cached 55min.
 - **Time filters** use the "Date Booked" column (when the meeting was booked), not the meeting date itself.
-- **Meetings Sat* metric** = attended count + 80% of upcoming count (projection based on historical attendance).
+- **Meetings Sat* metric** — `attended + 80% of upcoming`, computed once in `utils.ts` and used consistently across individual dashboards, the group aggregate, and the CampaignTable per-client rows.
 - **Opportunities with status "Meeting Booked"** go into the meetings table; all other statuses go into the leads/pipeline table.
 - **Attendance left blank** when the sheet field is empty — it does not default to "Upcoming".
 - **Closed/Lost leads sorted to bottom** of the pipeline table, with active leads (Lead, Nurture, Engaged Lead) shown first.
 - **ROI section** shown on 6 client dashboards: Prime Secure, Catapult Marketing, Evergreen Security, Select Group, Trust Hire, V360. Hidden on all others. Conditional on `CLIENT_NAME`.
+- **Weekly Touchpoints section** shown on Jua and myBasePay dashboards. Reads from a "Touchpoints" tab on the client's Google Sheet (columns: Week, Calls, LinkedIn, Email). Displays the most recent row. Component: `TouchpointsCard.tsx`.
 - **Password protection** via `DASHBOARD_PASSWORD` env var. Password stored in localStorage after first entry.
 
 ### Styling
@@ -91,7 +92,7 @@ node scripts/import-leads.js <CLOSE_API_KEY> <path-to-csv>
 
 ## Multi-Client Deployment
 
-18 Vercel projects share this repo. Vercel limits Git-connected repos to 10 projects, so 8 projects require manual `vercel --prod` redeployment after code changes.
+20 Vercel projects share this repo. Vercel limits Git-connected repos to 10 projects, so 10 projects require manual `vercel --prod` redeployment after code changes.
 
 To deploy a new client:
 ```bash
@@ -109,3 +110,15 @@ Use `printf '%s'` (not `echo` or `<<<`) to avoid trailing newlines in env values
 For clients with non-default tab names, also set:
 - `MEETINGS_TAB` — defaults to "Meetings booked" if not set
 - `LEADS_TAB` — defaults to "Leads" if not set
+
+## Group Dashboard (Prime Trading Group)
+
+A 19th Vercel project (`prime-trading-group-dashboard`) aggregates data from 6 client sheets into a single overview. Activated by the `GROUP_CLIENTS` env var (JSON array of `{name, sheetId, url}` objects).
+
+When `GROUP_CLIENTS` is set, `page.tsx` renders `GroupDashboard` instead of `Dashboard`. The `/api/group` route calls `fetchDashboardRawData(sheetId)` for each client in parallel using the optional parameter added to `sheets-api.ts`.
+
+Key components: `GroupDashboard.tsx`, `GroupROICard.tsx`, `CampaignTable.tsx`. The campaign table shows per-client metrics with "View →" links to individual dashboard URLs.
+
+The Sat* calculation is unified across individual and group dashboards — both use `attended + 80% of upcoming` from `utils.ts`.
+
+ROI revenue/pipeline values (Select Group, Catapult Marketing, Trust Hire) live in `src/lib/client-revenues.ts`. `Dashboard.tsx` reads per-client values via `getRoiFor(clientName)`; `GroupDashboard.tsx` sums them via `getGroupRoi(clientNames)`. This keeps the group total in sync whenever an individual ROI changes.

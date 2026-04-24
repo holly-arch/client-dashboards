@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
+import { getRoiFor } from '@/lib/client-revenues';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
 import ROICard from './ROICard';
@@ -180,18 +181,8 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} />
         </div>
 
-        {clientName === 'Select Group' && <ROICard revenue="£18,000" />}
-        {clientName === 'Catapult Marketing' && <ROICard revenue="£18,900" />}
+        {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
         {['Prime Secure', 'Evergreen Security', 'V360'].includes(clientName) && <ROICard />}
-        {clientName === 'Trust Hire' && (
-          <ROICard
-            revenue="£34,280"
-            revenueNote="YTL"
-            pipeline="£180,490"
-            pipelineNote="YTL £59,240 + Lancer Scott £121,250"
-            pipelineCaption=""
-          />
-        )}
         {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 
