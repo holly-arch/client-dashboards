@@ -21,9 +21,9 @@ export const CLIENT_ROI: Record<string, ClientRoi> = {
     revenue: '£34,280',
     revenueAmount: 34280,
     revenueNote: 'YTL',
-    pipeline: '£180,490',
-    pipelineAmount: 180490,
-    pipelineNote: 'YTL £59,240 + Lancer Scott £121,250',
+    pipeline: '£184,490',
+    pipelineAmount: 184490,
+    pipelineNote: 'YTL £59,240 + Lancer Scott £121,250 + Armac £4,000 (in June)',
     pipelineCaption: '',
   },
 };
