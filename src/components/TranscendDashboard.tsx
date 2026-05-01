@@ -172,7 +172,12 @@ export default function TranscendDashboard() {
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>Campaign Dashboard</h1>
           </div>
-          <TimeFilter selected={period} onChange={setPeriod} />
+          <div className="flex flex-col md:items-end gap-1">
+            <TimeFilter selected={period} onChange={setPeriod} />
+            {period !== 'all_time' && (
+              <p className="text-xs" style={{ color: '#666' }}>Filtered by campaign launch date</p>
+            )}
+          </div>
         </div>
 
         <EndClientFilter endClients={data.endClients} selected={endClient} onChange={setEndClient} />
