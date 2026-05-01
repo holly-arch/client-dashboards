@@ -32,7 +32,7 @@ export interface LeadReplyRecord {
   location: string;
   dateReplied: string | null;
   dateEmailSent: string | null;
-  notes: string;
+  reply: string;
 }
 
 export type NegativeReplyCategory = 'Not Interested' | 'Wrong Person' | 'Do Not Contact' | 'Uncategorised';

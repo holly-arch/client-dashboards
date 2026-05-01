@@ -48,7 +48,7 @@ export default function NegativeRepliesTable({ negativeReplies }: NegativeReplie
             <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: '#666', background: '#141414' }}>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Company</th>
-              <th className="text-left py-2 pr-3 font-medium">End-client</th>
+              <th className="text-left py-2 pr-3 font-medium">Client</th>
               <th className="text-left py-2 pr-3 font-medium">Category</th>
               <th className="text-left py-2 pr-3 font-medium">Contact Info</th>
               <th className="text-left py-2 font-medium">Reply</th>
@@ -83,7 +83,7 @@ export default function NegativeRepliesTable({ negativeReplies }: NegativeReplie
               <CategoryBadge category={n.category} />
             </div>
             <p className="text-sm" style={{ color: '#b0b0b0' }}>{n.company}</p>
-            {n.clientName && <p className="text-xs" style={{ color: '#888' }}>End-client: {n.clientName}</p>}
+            {n.clientName && <p className="text-xs" style={{ color: '#888' }}>Client: {n.clientName}</p>}
             {n.contactInfo && <p className="text-xs truncate mt-1" style={{ color: '#888' }}>{n.contactInfo}</p>}
             {n.reply && <p className="text-xs mt-2" style={{ color: '#b0b0b0' }}>{truncate(n.reply, 160)}</p>}
           </div>

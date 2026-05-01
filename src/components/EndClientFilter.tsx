@@ -11,7 +11,7 @@ export default function EndClientFilter({ endClients, selected, onChange }: EndC
   return (
     <div className="flex items-center gap-2">
       <label className="text-xs font-bold tracking-widest uppercase" style={{ color: '#9a9a9a' }}>
-        End-client
+        Client
       </label>
       <select
         value={selected}

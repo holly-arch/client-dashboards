@@ -40,7 +40,7 @@ const LEAD_COLS: Record<string, string[]> = {
   location: ['location'],
   dateReplied: ['date replied', 'reply date'],
   dateEmailSent: ['date email sent', 'email sent'],
-  notes: ['notes'],
+  reply: ['reply', 'notes'],
 };
 
 const NEG_COLS: Record<string, string[]> = {
@@ -182,7 +182,7 @@ export async function fetchTranscendRawData(): Promise<{
         location: getVal(row, cols.location),
         dateReplied: parseDate(getVal(row, cols.dateReplied)),
         dateEmailSent: parseDate(getVal(row, cols.dateEmailSent)),
-        notes: getVal(row, cols.notes),
+        reply: getVal(row, cols.reply),
       });
     }
   }
