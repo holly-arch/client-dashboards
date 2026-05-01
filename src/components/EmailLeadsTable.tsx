@@ -29,12 +29,13 @@ export default function EmailLeadsTable({ leads }: EmailLeadsTableProps) {
               <th className="text-left py-2 pr-3 font-medium">Email</th>
               <th className="text-left py-2 pr-3 font-medium">Phone</th>
               <th className="text-left py-2 pr-3 font-medium">Campaign</th>
-              <th className="text-left py-2 font-medium">Date Replied</th>
+              <th className="text-left py-2 pr-3 font-medium">Date Replied</th>
+              <th className="text-left py-2 font-medium">Reply</th>
             </tr>
           </thead>
           <tbody className="divide-subtle">
             {leads.map((l) => (
-              <tr key={l.id} className="hover:bg-white/[0.03]">
+              <tr key={l.id} className="hover:bg-white/[0.03] align-top">
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{l.contactName}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{l.company}</td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{l.jobTitle}</td>
@@ -43,12 +44,13 @@ export default function EmailLeadsTable({ leads }: EmailLeadsTableProps) {
                 </td>
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{l.phone}</td>
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{l.campaignName}</td>
-                <td className="py-3" style={{ color: '#888' }}>{l.dateReplied ? formatDate(l.dateReplied) : '—'}</td>
+                <td className="py-3 pr-3" style={{ color: '#888' }}>{l.dateReplied ? formatDate(l.dateReplied) : '—'}</td>
+                <td className="py-3 min-w-[280px] whitespace-pre-wrap break-words" style={{ color: '#b0b0b0' }}>{l.reply}</td>
               </tr>
             ))}
             {leads.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-8 text-center" style={{ color: '#555' }}>No replies yet</td>
+                <td colSpan={8} className="py-8 text-center" style={{ color: '#555' }}>No positive replies yet</td>
               </tr>
             )}
           </tbody>
@@ -68,10 +70,11 @@ export default function EmailLeadsTable({ leads }: EmailLeadsTableProps) {
             {l.phone && <p className="text-xs" style={{ color: '#888' }}>{l.phone}</p>}
             <p className="text-xs mt-1" style={{ color: '#666' }}>Campaign: {l.campaignName}</p>
             {l.dateReplied && <p className="text-xs" style={{ color: '#666' }}>Replied {formatDate(l.dateReplied)}</p>}
+            {l.reply && <p className="text-xs mt-2 whitespace-pre-wrap break-words" style={{ color: '#b0b0b0' }}>{l.reply}</p>}
           </div>
         ))}
         {leads.length === 0 && (
-          <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No replies yet</p>
+          <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No positive replies yet</p>
         )}
       </div>
     </div>
