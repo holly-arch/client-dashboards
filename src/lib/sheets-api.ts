@@ -89,6 +89,7 @@ const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
   attendance: ['attendance', 'status'],
   shortStatus: ['short status'],
   partnerStatus: ['partner status'],
+  industry: ['industry'],
 };
 
 const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -100,6 +101,7 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   dateBooked: ['date booked', 'date'],
   status: ['status', 'opportunity status', 'pipeline status'],
   lytxNotes: ['lytx notes'],
+  industry: ['industry'],
 };
 
 function detectColumns(headers: string[], matchers: Record<string, string[]>): Record<string, number> {
@@ -269,6 +271,7 @@ export async function fetchDashboardRawData(
       const meetingDate = parseDate(meetingDateStr, meetingTimeStr);
       const shortStatus = getVal(row, mCols.shortStatus);
       const partnerStatus = getVal(row, mCols.partnerStatus);
+      const industry = getVal(row, mCols.industry);
 
       meetings.push({
         id: `m-${i}`,
@@ -281,6 +284,7 @@ export async function fetchDashboardRawData(
         sheetRowIndex: i + 1, // 1-indexed sheet row (i=1 for first data row = sheet row 2)
         ...(shortStatus !== undefined && mCols.shortStatus !== undefined ? { shortStatus } : {}),
         ...(partnerStatus !== undefined && mCols.partnerStatus !== undefined ? { partnerStatus } : {}),
+        ...(mCols.industry !== undefined ? { industry } : {}),
       });
     }
   }
@@ -316,6 +320,7 @@ export async function fetchDashboardRawData(
 
       const date = parseDate(dateBooked) || '';
       const lytxNotes = getVal(row, lCols.lytxNotes);
+      const industry = getVal(row, lCols.industry);
 
       leads.push({
         id: `l-${i}`,
@@ -326,6 +331,7 @@ export async function fetchDashboardRawData(
         status,
         sheetRowIndex: i + 1,
         ...(lytxNotes !== undefined && lCols.lytxNotes !== undefined ? { lytxNotes } : {}),
+        ...(lCols.industry !== undefined ? { industry } : {}),
       });
     }
   }

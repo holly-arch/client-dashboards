@@ -16,6 +16,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
   // Detect if editable columns exist (only on sheets that have them)
   const hasShortStatus = meetings.some((m) => m.shortStatus !== undefined);
   const hasPartnerStatus = meetings.some((m) => m.partnerStatus !== undefined);
+  const hasIndustry = meetings.some((m) => m.industry !== undefined);
   const showMeetingDate = clientName === 'Jua';
 
   return (
@@ -36,6 +37,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
+              {hasIndustry && <th className="text-left py-2 pr-3 font-medium">Industry</th>}
               <th className="text-left py-2 pr-3 font-medium">Date Booked</th>
               {showMeetingDate && <th className="text-left py-2 pr-3 font-medium">Meeting Date</th>}
               <th className="text-left py-2 pr-3 font-medium">Status</th>
@@ -49,6 +51,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{m.company}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{m.contactName}</td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{m.contactTitle}</td>
+                {hasIndustry && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.industry || '—'}</td>}
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(m.dateCreated)}</td>
                 {showMeetingDate && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.meetingDate ? formatDate(m.meetingDate) : '—'}</td>}
                 <td className="py-3 pr-3"><StatusBadge status={m.subStatus} /></td>
@@ -66,7 +69,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             ))}
             {meetings.length === 0 && (
               <tr>
-                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
+                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasIndustry ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
               </tr>
             )}
           </tbody>
@@ -83,6 +86,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             </div>
             <p className="text-sm" style={{ color: '#b0b0b0' }}>{m.contactName}</p>
             <p className="text-xs truncate" style={{ color: '#888' }}>{m.contactTitle}</p>
+            {hasIndustry && m.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {m.industry}</p>}
             <p className="text-xs mt-1" style={{ color: '#666' }}>Booked: {formatDate(m.dateCreated)}</p>
             {showMeetingDate && <p className="text-xs" style={{ color: '#666' }}>Meeting: {m.meetingDate ? formatDate(m.meetingDate) : '—'}</p>}
             {(hasShortStatus || hasPartnerStatus) && (

@@ -21,6 +21,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
 
   // Detect if editable columns exist
   const hasLytxNotes = leads.some((l) => l.lytxNotes !== undefined);
+  const hasIndustry = leads.some((l) => l.industry !== undefined);
 
   return (
     <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -62,6 +63,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
+              {hasIndustry && <th className="text-left py-2 pr-3 font-medium">Industry</th>}
               <th className="text-left py-2 pr-3 font-medium">Date</th>
               <th className="text-left py-2 pr-3 font-medium">Status</th>
               {hasLytxNotes && <th className="text-left py-2 font-medium">Lytx Notes</th>}
@@ -73,6 +75,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{l.company}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{l.contactName}</td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{l.contactTitle}</td>
+                {hasIndustry && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.industry || '—'}</td>}
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(l.date)}</td>
                 <td className="py-3 pr-3"><StatusBadge status={l.status} /></td>
                 {hasLytxNotes && (
@@ -84,7 +87,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
             ))}
             {filteredLeads.length === 0 && (
               <tr>
-                <td colSpan={5 + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
+                <td colSpan={5 + (hasIndustry ? 1 : 0) + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
               </tr>
             )}
           </tbody>
@@ -101,6 +104,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
             </div>
             <p className="text-sm" style={{ color: '#b0b0b0' }}>{l.contactName}</p>
             <p className="text-xs truncate" style={{ color: '#888' }}>{l.contactTitle}</p>
+            {hasIndustry && l.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {l.industry}</p>}
             {l.date && <p className="text-xs mt-1" style={{ color: '#666' }}>{formatDate(l.date)}</p>}
             {hasLytxNotes && (
               <div className="mt-2 pt-2" style={{ borderTop: '1px solid #252525' }}>

@@ -11,6 +11,7 @@ export interface MeetingRecord {
   sheetRowIndex?: number;
   shortStatus?: string;
   partnerStatus?: string;
+  industry?: string;
 }
 
 export interface LeadRecord {
@@ -22,6 +23,7 @@ export interface LeadRecord {
   status: string; // Lead, Nurture, Engaged Lead, Closed/Lost, Meeting Booked
   sheetRowIndex?: number;
   lytxNotes?: string;
+  industry?: string;
 }
 
 export interface DashboardMetrics {
