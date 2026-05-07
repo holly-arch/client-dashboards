@@ -84,24 +84,26 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
               <th className="text-left py-2 pr-3 font-medium">Last Name</th>
               <th className="text-left py-2 pr-3 font-medium">Email</th>
               <th className="text-left py-2 pr-3 font-medium">Status</th>
-              <th className="text-left py-2 font-medium">Booked?</th>
+              <th className="text-left py-2 pr-3 font-medium">Booked?</th>
+              <th className="text-left py-2 font-medium">Notes</th>
             </tr>
           </thead>
           <tbody className="divide-subtle">
             {orderedInbounds.map((i) => (
-              <tr key={i.id} className="hover:bg-white/[0.03]">
+              <tr key={i.id} className="hover:bg-white/[0.03] align-top">
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{i.firstName}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{i.lastName}</td>
                 <td className="py-3 pr-3 truncate max-w-[260px]" style={{ color: '#b0b0b0' }}>
                   {i.email && <a href={`mailto:${i.email}`} className="hover:underline">{i.email}</a>}
                 </td>
                 <td className="py-3 pr-3"><StatusBadge value={i.status} /></td>
-                <td className="py-3"><BookedBadge value={i.booked} /></td>
+                <td className="py-3 pr-3"><BookedBadge value={i.booked} /></td>
+                <td className="py-3 max-w-[280px] whitespace-pre-wrap break-words" style={{ color: '#888' }}>{i.notes}</td>
               </tr>
             ))}
             {inbounds.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-8 text-center" style={{ color: '#555' }}>No website inbounds yet</td>
+                <td colSpan={6} className="py-8 text-center" style={{ color: '#555' }}>No website inbounds yet</td>
               </tr>
             )}
           </tbody>
@@ -122,6 +124,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
               <StatusBadge value={i.status} />
               <BookedBadge value={i.booked} />
             </div>
+            {i.notes && <p className="text-xs mt-2 whitespace-pre-wrap break-words" style={{ color: '#888' }}>{i.notes}</p>}
           </div>
         ))}
         {inbounds.length === 0 && (

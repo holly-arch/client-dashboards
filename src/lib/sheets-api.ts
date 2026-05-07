@@ -110,6 +110,7 @@ const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   email: ['email address', 'email'],
   status: ['status', 'qualified', 'qualification'],
   booked: ['booked?', 'booked', 'booking', 'meeting booked'],
+  notes: ['notes', 'note'],
 };
 
 function detectColumns(headers: string[], matchers: Record<string, string[]>): Record<string, number> {
@@ -399,6 +400,7 @@ export async function fetchDashboardRawData(
         email,
         status: getVal(row, iCols.status),
         booked: getVal(row, iCols.booked),
+        notes: getVal(row, iCols.notes),
       });
     }
   }

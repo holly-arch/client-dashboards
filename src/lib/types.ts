@@ -52,6 +52,7 @@ export interface WebsiteInboundRecord {
   email: string;
   status: string; // 'Qualified' | 'Disqualified' | ''
   booked: string; // 'Yes' | 'No' | ''
+  notes: string;
 }
 
 export interface DashboardData {
