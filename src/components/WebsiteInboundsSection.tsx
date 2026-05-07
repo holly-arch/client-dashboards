@@ -56,18 +56,17 @@ function MiniKpi({ label, value, color }: MiniKpiProps) {
 }
 
 export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSectionProps) {
+  // Newest entries (bottom of sheet) shown first
+  const orderedInbounds = [...inbounds].reverse();
   const total = inbounds.length;
   const qualified = inbounds.filter((i) => i.status.toLowerCase() === 'qualified').length;
   const booked = inbounds.filter((i) => i.booked.toLowerCase() === 'yes').length;
 
   return (
     <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
-      <div className="mb-4">
-        <h3 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>WEBSITE INBOUNDS</h3>
-        <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold" style={{ color: '#fafafa' }}>Lead Capture</span>
-          <span className="text-sm" style={{ color: '#666' }}>{total} total</span>
-        </div>
+      <div className="mb-4 flex items-baseline gap-2">
+        <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WEBSITE INBOUNDS</h3>
+        <span className="text-sm" style={{ color: '#666' }}>{total} total</span>
       </div>
 
       <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4">
@@ -89,7 +88,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
             </tr>
           </thead>
           <tbody className="divide-subtle">
-            {inbounds.map((i) => (
+            {orderedInbounds.map((i) => (
               <tr key={i.id} className="hover:bg-white/[0.03]">
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{i.firstName}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{i.lastName}</td>
@@ -111,7 +110,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {inbounds.map((i) => (
+        {orderedInbounds.map((i) => (
           <div key={i.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
             <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{i.firstName} {i.lastName}</p>
             {i.email && (
