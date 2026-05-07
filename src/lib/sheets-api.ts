@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -102,6 +102,14 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   status: ['status', 'opportunity status', 'pipeline status'],
   lytxNotes: ['lytx notes'],
   industry: ['industry'],
+};
+
+const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
+  firstName: ['first name', 'firstname', 'first', 'forename'],
+  lastName: ['last name', 'surname', 'lastname', 'second name', 'family name'],
+  email: ['email address', 'email'],
+  status: ['status', 'qualified', 'qualification'],
+  booked: ['booked?', 'booked', 'booking', 'meeting booked'],
 };
 
 function detectColumns(headers: string[], matchers: Record<string, string[]>): Record<string, number> {
@@ -226,6 +234,7 @@ export async function fetchDashboardRawData(
   meetings: MeetingRecord[];
   leads: LeadRecord[];
   touchpointRows: TouchpointRow[];
+  websiteInbounds: WebsiteInboundRecord[];
 }> {
   const sheetId = overrideSheetId || process.env.GOOGLE_SHEET_ID;
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID environment variable is not set');
@@ -233,11 +242,12 @@ export async function fetchDashboardRawData(
   const meetingsTab = overrideMeetingsTab || process.env.MEETINGS_TAB || 'Meetings booked';
   const leadsTab = overrideLeadsTab || process.env.LEADS_TAB || 'Leads';
 
-  // Fetch all tabs in parallel (Touchpoints tab is optional — fail silently)
-  const [meetingRows, leadRows, touchpointRows] = await Promise.all([
+  // Fetch all tabs in parallel (Touchpoints + Website Inbounds tabs are optional — fail silently)
+  const [meetingRows, leadRows, touchpointRows, inboundRows] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
     fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
+    fetchSheet(sheetId, 'Website Inbounds').catch(() => [] as string[][]),
   ]);
 
   // --- Process Meetings ---
@@ -371,7 +381,29 @@ export async function fetchDashboardRawData(
     }
   }
 
-  return { meetings, leads, touchpointRows: parsedTouchpoints };
+  // --- Process Website Inbounds ---
+  const websiteInbounds: WebsiteInboundRecord[] = [];
+  if (inboundRows.length > 1) {
+    const iCols = detectColumns(inboundRows[0], INBOUND_COLUMN_MATCHERS);
+    for (let i = 1; i < inboundRows.length; i++) {
+      const row = inboundRows[i];
+      const firstName = getVal(row, iCols.firstName);
+      const lastName = getVal(row, iCols.lastName);
+      const email = getVal(row, iCols.email);
+      // Skip blank rows
+      if (!firstName && !lastName && !email) continue;
+      websiteInbounds.push({
+        id: `wi-${i}`,
+        firstName,
+        lastName,
+        email,
+        status: getVal(row, iCols.status),
+        booked: getVal(row, iCols.booked),
+      });
+    }
+  }
+
+  return { meetings, leads, touchpointRows: parsedTouchpoints, websiteInbounds };
 }
 
 export interface TouchpointsData {

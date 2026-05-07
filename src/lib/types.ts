@@ -45,11 +45,21 @@ export interface TouchpointRow {
   email: number;
 }
 
+export interface WebsiteInboundRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: string; // 'Qualified' | 'Disqualified' | ''
+  booked: string; // 'Yes' | 'No' | ''
+}
+
 export interface DashboardData {
   meetings: MeetingRecord[];
   leads: LeadRecord[];
   statusCounts: Record<string, number>;
   metrics: DashboardMetrics;
   touchpoints?: { calls: number; linkedin: number; email: number };
+  websiteInbounds?: WebsiteInboundRecord[];
   lastUpdated: string;
 }

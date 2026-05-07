@@ -10,6 +10,7 @@ import TouchpointsCard from './TouchpointsCard';
 import MetricCards from './MetricCards';
 import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
+import WebsiteInboundsSection from './WebsiteInboundsSection';
 import Footer from './Footer';
 
 const REFRESH_INTERVAL = 60_000;
@@ -190,6 +191,10 @@ export default function Dashboard() {
           <OutreachTable meetings={data.meetings} onRefresh={fetchData} clientName={clientName} />
           <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} />
         </div>
+
+        {data.websiteInbounds && data.websiteInbounds.length > 0 && (
+          <WebsiteInboundsSection inbounds={data.websiteInbounds} />
+        )}
       </main>
 
       <Footer />
