@@ -26,6 +26,15 @@ export const CLIENT_ROI: Record<string, ClientRoi> = {
     pipelineNote: 'YTL £59,240 + Lancer Scott £121,250 + Armac £4,000 (in June)',
     pipelineCaption: '',
   },
+  'V360': {
+    revenue: '£67,780',
+    revenueAmount: 67780,
+    revenueNote: '3000 Security £67,060 + I-On Security £720',
+    pipeline: '£459,092',
+    pipelineAmount: 459092,
+    pipelineNote: '3000 Security £444,682 + CCTV Aware £6,010 + Vistech Services £3,320 + Go Security £5,080',
+    pipelineCaption: '',
+  },
 };
 
 function formatGBP(n: number): string {

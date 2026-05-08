@@ -183,7 +183,7 @@ export default function Dashboard() {
         </div>
 
         {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
-        {['Prime Secure', 'Evergreen Security', 'V360'].includes(clientName) && <ROICard />}
+        {['Prime Secure', 'Evergreen Security'].includes(clientName) && <ROICard />}
         {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 
