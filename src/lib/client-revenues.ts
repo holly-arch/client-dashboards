@@ -33,7 +33,7 @@ export const CLIENT_ROI: Record<string, ClientRoi> = {
     pipeline: '£459,092',
     pipelineAmount: 459092,
     pipelineNote: '3000 Security £444,682 + CCTV Aware £6,010 + Vistech Services £3,320 + Go Security £5,080',
-    pipelineCaption: '',
+    pipelineCaption: 'Gross value of open deals',
   },
 };
 
