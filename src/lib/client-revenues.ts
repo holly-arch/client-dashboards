@@ -9,6 +9,11 @@ export interface ClientRoi {
 }
 
 export const CLIENT_ROI: Record<string, ClientRoi> = {
+  'Prime Secure': {
+    revenue: '£10,295.71',
+    revenueAmount: 10295.71,
+    revenueNote: 'BrynBuild £1,188.57 + Coffey Construction Ltd £9,107.14',
+  },
   'Select Group': {
     revenue: '£18,000',
     revenueAmount: 18000,
@@ -29,7 +34,7 @@ export const CLIENT_ROI: Record<string, ClientRoi> = {
 };
 
 function formatGBP(n: number): string {
-  return `£${n.toLocaleString('en-GB')}`;
+  return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
 }
 
 export function getRoiFor(clientName: string): ClientRoi | undefined {
