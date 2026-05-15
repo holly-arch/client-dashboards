@@ -172,6 +172,10 @@ export default function GroupDashboard() {
 
   const m = data.aggregate.metrics;
   const groupRoi = getGroupRoi(data.clients.map((c) => c.name));
+  // Only show clients that were active in the selected period (any meetings or leads).
+  const activeClients = data.clients.filter(
+    (c) => c.data.metrics.meetingsBooked > 0 || c.data.metrics.leadsGenerated > 0,
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -183,7 +187,7 @@ export default function GroupDashboard() {
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>GROUP OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{clientName}</h1>
             <p className="text-sm mt-1" style={{ color: '#666' }}>
-              Aggregated performance across {data.clients.length} campaigns • {period === 'all_time' ? 'All time data' : period.replace('_', ' ')}
+              Aggregated performance across {activeClients.length} campaigns • {period === 'all_time' ? 'All time data' : period.replace('_', ' ')}
             </p>
           </div>
           <TimeFilter selected={period} onChange={setPeriod} quarters={data.aggregate.availableQuarters} />
@@ -245,7 +249,7 @@ export default function GroupDashboard() {
           *Meetings Sat includes confirmed attendances plus 80% of upcoming meetings based on historical attendance rates.
         </p>
 
-        <CampaignTable clients={data.clients} />
+        <CampaignTable clients={activeClients} />
       </main>
 
       <footer className="flex flex-col sm:flex-row items-center justify-between gap-1 px-4 md:px-6 py-4 text-xs mt-auto" style={{ borderTop: '1px solid #1e1e1e', color: '#555' }}>
