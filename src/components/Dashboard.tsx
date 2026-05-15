@@ -15,6 +15,12 @@ import Footer from './Footer';
 
 const REFRESH_INTERVAL = 60_000;
 
+// Quarter filter pills only render on the 6 PTG client dashboards (per Holly's request).
+const PTG_CLIENTS_WITH_QUARTERS = new Set([
+  'Prime Secure', 'Select Group', 'Catapult Marketing',
+  'Trust Hire', 'V360', 'Evergreen Security',
+]);
+
 function PasswordGate({ onAuth }: { onAuth: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -179,7 +185,7 @@ export default function Dashboard() {
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>Campaign Dashboard</h1>
           </div>
-          <TimeFilter selected={period} onChange={setPeriod} quarters={data.availableQuarters} />
+          <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
         {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
