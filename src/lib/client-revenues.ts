@@ -31,6 +31,11 @@ export const CLIENT_ROI: Record<string, ClientRoi> = {
     pipelineNote: 'YTL £59,240 + Lancer Scott £121,250 + Armac £4,000 (in June)',
     pipelineCaption: '',
   },
+  'V360': {
+    revenue: '£67,780',
+    revenueAmount: 67780,
+    revenueNote: 'Creynolds Lane v1 £67,060 + vPods Birmingham £720',
+  },
 };
 
 function formatGBP(n: number): string {
