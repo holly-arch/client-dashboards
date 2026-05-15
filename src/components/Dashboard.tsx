@@ -179,7 +179,7 @@ export default function Dashboard() {
             <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
             <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>Campaign Dashboard</h1>
           </div>
-          <TimeFilter selected={period} onChange={setPeriod} />
+          <TimeFilter selected={period} onChange={setPeriod} quarters={data.availableQuarters} />
         </div>
 
         {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}

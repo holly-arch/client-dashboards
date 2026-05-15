@@ -1,7 +1,21 @@
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, DashboardData, DashboardMetrics, TimePeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
+
+const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
 function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
   if (period === 'all_time') return null;
+
+  // Specific quarter (e.g. q3_2025)
+  const m = period.match(QUARTER_PATTERN);
+  if (m) {
+    const q = parseInt(m[1]);
+    const y = parseInt(m[2]);
+    const startMonth = (q - 1) * 3;
+    const start = new Date(y, startMonth, 1, 0, 0, 0, 0);
+    // Day 0 of month after the quarter = last day of quarter
+    const end = new Date(y, startMonth + 3, 0, 23, 59, 59, 999);
+    return { start, end };
+  }
 
   const now = new Date();
   const start = new Date();
@@ -31,6 +45,31 @@ function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
   }
 
   return { start, end: now };
+}
+
+function deriveAvailableQuarters(meetings: MeetingRecord[], leads: LeadRecord[]): QuarterOption[] {
+  const seen = new Set<string>();
+  const collect = (iso: string) => {
+    if (!iso) return;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return;
+    const y = d.getFullYear();
+    const q = Math.floor(d.getMonth() / 3) + 1;
+    seen.add(`${y}-${q}`);
+  };
+  for (const m of meetings) collect(m.dateCreated);
+  for (const l of leads) collect(l.date);
+
+  return Array.from(seen)
+    .map((s) => {
+      const [y, q] = s.split('-').map(Number);
+      return { year: y, quarter: q };
+    })
+    .sort((a, b) => a.year - b.year || a.quarter - b.quarter)
+    .map(({ year, quarter }) => ({
+      value: `q${quarter}_${year}` as QuarterPeriod,
+      label: `Q${quarter} ${year}`,
+    }));
 }
 
 function isInRange(dateStr: string, range: { start: Date; end: Date } | null): boolean {
@@ -95,6 +134,10 @@ export function buildDashboardData(
     };
   }
 
+  // Available quarters derived from the unfiltered raw inputs so the filter list
+  // is stable regardless of which period is currently selected.
+  const availableQuarters = deriveAvailableQuarters(meetings, leads);
+
   return {
     meetings: filteredMeetings,
     leads: filteredLeads,
@@ -102,6 +145,7 @@ export function buildDashboardData(
     metrics,
     touchpoints,
     ...(websiteInbounds && websiteInbounds.length > 0 ? { websiteInbounds } : {}),
+    ...(availableQuarters.length > 0 ? { availableQuarters } : {}),
     lastUpdated: new Date().toISOString(),
   };
 }

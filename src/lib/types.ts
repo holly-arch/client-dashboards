@@ -1,4 +1,11 @@
-export type TimePeriod = 'this_week' | 'this_month' | 'this_quarter' | 'ytd' | 'all_time';
+export type StandardTimePeriod = 'this_week' | 'this_month' | 'this_quarter' | 'ytd' | 'all_time';
+export type QuarterPeriod = `q${1 | 2 | 3 | 4}_${number}`;
+export type TimePeriod = StandardTimePeriod | QuarterPeriod;
+
+export interface QuarterOption {
+  value: QuarterPeriod;
+  label: string;
+}
 
 export interface MeetingRecord {
   id: string;
@@ -62,5 +69,6 @@ export interface DashboardData {
   metrics: DashboardMetrics;
   touchpoints?: { calls: number; linkedin: number; email: number };
   websiteInbounds?: WebsiteInboundRecord[];
+  availableQuarters?: QuarterOption[];
   lastUpdated: string;
 }

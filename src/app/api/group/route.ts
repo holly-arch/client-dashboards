@@ -23,14 +23,19 @@ export interface GroupResponse {
   lastUpdated: string;
 }
 
-const VALID_PERIODS: TimePeriod[] = ['this_week', 'this_month', 'this_quarter', 'ytd', 'all_time'];
+const STANDARD_PERIODS = new Set(['this_week', 'this_month', 'this_quarter', 'ytd', 'all_time']);
+const QUARTER_PATTERN = /^q[1-4]_\d{4}$/;
+
+function isValidPeriod(p: string): boolean {
+  return STANDARD_PERIODS.has(p) || QUARTER_PATTERN.test(p);
+}
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const period = (searchParams.get('period') || 'all_time') as TimePeriod;
 
-    if (!VALID_PERIODS.includes(period)) {
+    if (!isValidPeriod(period)) {
       return NextResponse.json({ error: 'Invalid period' }, { status: 400 });
     }
 

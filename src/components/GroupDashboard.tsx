@@ -186,7 +186,7 @@ export default function GroupDashboard() {
               Aggregated performance across {data.clients.length} campaigns • {period === 'all_time' ? 'All time data' : period.replace('_', ' ')}
             </p>
           </div>
-          <TimeFilter selected={period} onChange={setPeriod} />
+          <TimeFilter selected={period} onChange={setPeriod} quarters={data.aggregate.availableQuarters} />
         </div>
 
         <GroupROICard revenue={groupRoi.revenue} pipeline={groupRoi.pipeline} />
