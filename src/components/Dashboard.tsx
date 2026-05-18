@@ -190,7 +190,7 @@ export default function Dashboard() {
 
         {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
         {['Evergreen Security'].includes(clientName) && <ROICard />}
-        {['Jua', 'myBasePay'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+        {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
