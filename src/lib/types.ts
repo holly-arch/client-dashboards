@@ -47,9 +47,9 @@ export interface DashboardMetrics {
 
 export interface TouchpointRow {
   week: string; // ISO date string for the week commencing date
-  calls: number;
-  linkedin: number;
-  email: number;
+  calls?: number;
+  linkedin?: number;
+  email?: number;
 }
 
 export interface WebsiteInboundRecord {
@@ -67,7 +67,7 @@ export interface DashboardData {
   leads: LeadRecord[];
   statusCounts: Record<string, number>;
   metrics: DashboardMetrics;
-  touchpoints?: { calls: number; linkedin: number; email: number };
+  touchpoints?: { calls?: number; linkedin?: number; email?: number };
   websiteInbounds?: WebsiteInboundRecord[];
   availableQuarters?: QuarterOption[];
   lastUpdated: string;

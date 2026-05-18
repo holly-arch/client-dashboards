@@ -373,12 +373,11 @@ export async function fetchDashboardRawData(
       const weekStr = weekIdx >= 0 ? (row[weekIdx] || '').trim() : '';
       const week = parseDate(weekStr);
       if (!week) continue;
-      parsedTouchpoints.push({
-        week,
-        calls: callsIdx >= 0 ? parseInt(row[callsIdx] || '0') || 0 : 0,
-        linkedin: linkedinIdx >= 0 ? parseInt(row[linkedinIdx] || '0') || 0 : 0,
-        email: emailIdx >= 0 ? parseInt(row[emailIdx] || '0') || 0 : 0,
-      });
+      const tp: TouchpointRow = { week };
+      if (callsIdx >= 0) tp.calls = parseInt(row[callsIdx] || '0') || 0;
+      if (linkedinIdx >= 0) tp.linkedin = parseInt(row[linkedinIdx] || '0') || 0;
+      if (emailIdx >= 0) tp.email = parseInt(row[emailIdx] || '0') || 0;
+      parsedTouchpoints.push(tp);
     }
   }
 

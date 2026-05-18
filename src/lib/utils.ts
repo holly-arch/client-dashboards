@@ -123,15 +123,22 @@ export function buildDashboardData(
     leadsConvertedToMeetings: filteredMeetings.length,
   };
 
-  // Filter and sum touchpoints if provided
-  let touchpoints: { calls: number; linkedin: number; email: number } | undefined;
+  // Filter and sum touchpoints if provided — only include channels that were
+  // actually present on the sheet (some clients only track Calls, for example).
+  let touchpoints: { calls?: number; linkedin?: number; email?: number } | undefined;
   if (touchpointRows && touchpointRows.length > 0) {
     const filtered = touchpointRows.filter((t) => isInRange(t.week, range));
-    touchpoints = {
-      calls: filtered.reduce((sum, t) => sum + t.calls, 0),
-      linkedin: filtered.reduce((sum, t) => sum + t.linkedin, 0),
-      email: filtered.reduce((sum, t) => sum + t.email, 0),
-    };
+    const channels: { calls?: number; linkedin?: number; email?: number } = {};
+    if (filtered.some((t) => t.calls !== undefined)) {
+      channels.calls = filtered.reduce((s, t) => s + (t.calls ?? 0), 0);
+    }
+    if (filtered.some((t) => t.linkedin !== undefined)) {
+      channels.linkedin = filtered.reduce((s, t) => s + (t.linkedin ?? 0), 0);
+    }
+    if (filtered.some((t) => t.email !== undefined)) {
+      channels.email = filtered.reduce((s, t) => s + (t.email ?? 0), 0);
+    }
+    if (Object.keys(channels).length > 0) touchpoints = channels;
   }
 
   // Available quarters derived from the unfiltered raw inputs so the filter list
