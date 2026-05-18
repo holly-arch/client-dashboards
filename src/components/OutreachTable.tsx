@@ -33,7 +33,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
       <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 max-h-96">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+            <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: '#666', background: '#141414' }}>
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
