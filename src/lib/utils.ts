@@ -112,9 +112,10 @@ export function buildDashboardData(
   const meetingsSat = attended + projected;
 
   // Average fleet size — only computed for sheets that capture the column.
-  // Recalculated whenever the filtered meeting set changes so the figure updates
-  // live as new meetings are booked or the period filter changes.
-  const fleetSizes = filteredMeetings
+  // Uses the full meeting set (not the time-filtered one) so the figure
+  // represents the lifetime average and stays stable when the user clicks
+  // between time-period pills.
+  const fleetSizes = meetings
     .map((m) => m.fleetSize)
     .filter((v): v is number => typeof v === 'number' && v > 0);
   const avgFleetSize = fleetSizes.length > 0
