@@ -421,6 +421,59 @@ export async function fetchDashboardRawData(
   return { meetings, leads, touchpointRows: parsedTouchpoints, websiteInbounds };
 }
 
+// Demo dashboard: shift every date so the most recent meeting/lead lands on
+// "today". Anchored on the latest dateCreated / lead date (not meetingDate) so
+// upcoming meetings stay in the future after the shift.
+export function shiftDatesToToday(raw: {
+  meetings: MeetingRecord[];
+  leads: LeadRecord[];
+  touchpointRows: TouchpointRow[];
+  websiteInbounds: WebsiteInboundRecord[];
+}): typeof raw {
+  const candidates: number[] = [];
+  for (const m of raw.meetings) {
+    const t = new Date(m.dateCreated).getTime();
+    if (!isNaN(t)) candidates.push(t);
+  }
+  for (const l of raw.leads) {
+    if (!l.date) continue;
+    const t = new Date(l.date).getTime();
+    if (!isNaN(t)) candidates.push(t);
+  }
+  if (candidates.length === 0) return raw;
+
+  const latest = Math.max(...candidates);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const deltaMs = today.getTime() - latest;
+  if (Math.abs(deltaMs) < 24 * 60 * 60 * 1000) return raw;
+
+  const shift = (iso: string | null): string | null => {
+    if (!iso) return iso;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return new Date(d.getTime() + deltaMs).toISOString();
+  };
+
+  return {
+    meetings: raw.meetings.map((m) => ({
+      ...m,
+      dateCreated: shift(m.dateCreated) || m.dateCreated,
+      meetingDate: shift(m.meetingDate),
+    })),
+    leads: raw.leads.map((l) => ({
+      ...l,
+      date: shift(l.date) || l.date,
+    })),
+    touchpointRows: raw.touchpointRows.map((t) => ({
+      ...t,
+      week: shift(t.week) || t.week,
+    })),
+    websiteInbounds: raw.websiteInbounds,
+  };
+}
+
 export interface TouchpointsData {
   week: string;
   calls: number;

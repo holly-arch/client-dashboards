@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { fetchDashboardRawData } from '@/lib/sheets-api';
+import { fetchDashboardRawData, shiftDatesToToday } from '@/lib/sheets-api';
 import { buildDashboardData } from '@/lib/utils';
 import { TimePeriod } from '@/lib/types';
 
@@ -19,8 +19,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Invalid period' }, { status: 400 });
     }
 
-    const { meetings, leads, touchpointRows, websiteInbounds } = await fetchDashboardRawData();
-    const data = buildDashboardData(meetings, leads, period, touchpointRows, websiteInbounds);
+    let raw = await fetchDashboardRawData();
+    if (process.env.CLIENT_NAME === 'Demo') raw = shiftDatesToToday(raw);
+    const data = buildDashboardData(raw.meetings, raw.leads, period, raw.touchpointRows, raw.websiteInbounds);
 
     return NextResponse.json(data);
   } catch (error) {
