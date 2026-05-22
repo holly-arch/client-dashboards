@@ -7,6 +7,7 @@ import Header from './Header';
 import TimeFilter from './TimeFilter';
 import ROICard from './ROICard';
 import TouchpointsCard from './TouchpointsCard';
+import FleetSizeCard from './FleetSizeCard';
 import MetricCards from './MetricCards';
 import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
@@ -191,6 +192,7 @@ export default function Dashboard() {
         {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
         {['Evergreen Security'].includes(clientName) && <ROICard />}
         {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+        {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
         <MetricCards metrics={data.metrics} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">

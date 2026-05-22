@@ -111,6 +111,16 @@ export function buildDashboardData(
   const projected = Math.round(upcoming * 0.8);
   const meetingsSat = attended + projected;
 
+  // Average fleet size — only computed for sheets that capture the column.
+  // Recalculated whenever the filtered meeting set changes so the figure updates
+  // live as new meetings are booked or the period filter changes.
+  const fleetSizes = filteredMeetings
+    .map((m) => m.fleetSize)
+    .filter((v): v is number => typeof v === 'number' && v > 0);
+  const avgFleetSize = fleetSizes.length > 0
+    ? Math.round(fleetSizes.reduce((s, n) => s + n, 0) / fleetSizes.length)
+    : undefined;
+
   const metrics: DashboardMetrics = {
     meetingsBooked: filteredMeetings.length,
     meetingsCancelled: cancelled,
@@ -121,6 +131,7 @@ export function buildDashboardData(
     awaitingReschedule,
     leadsGenerated: filteredLeads.length,
     leadsConvertedToMeetings: filteredMeetings.length,
+    ...(avgFleetSize !== undefined ? { avgFleetSize } : {}),
   };
 
   // Filter and sum touchpoints if provided — only include channels that were

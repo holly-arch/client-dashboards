@@ -90,6 +90,7 @@ const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
   shortStatus: ['short status'],
   partnerStatus: ['partner status'],
   industry: ['industry'],
+  fleetSize: ['fleet size', 'fleet'],
 };
 
 const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -284,6 +285,18 @@ export async function fetchDashboardRawData(
       const partnerStatus = getVal(row, mCols.partnerStatus);
       const industry = getVal(row, mCols.industry);
 
+      // Fleet size — only parse when the sheet has the column; allow numeric strings
+      // with commas (e.g. "1,200"). Blank / non-numeric cells are left undefined so
+      // older rows captured before the column existed don't drag the average to zero.
+      let fleetSize: number | undefined;
+      if (mCols.fleetSize !== undefined) {
+        const raw = getVal(row, mCols.fleetSize).replace(/,/g, '');
+        if (raw) {
+          const n = parseInt(raw, 10);
+          if (!isNaN(n)) fleetSize = n;
+        }
+      }
+
       meetings.push({
         id: `m-${i}`,
         company,
@@ -296,6 +309,7 @@ export async function fetchDashboardRawData(
         ...(shortStatus !== undefined && mCols.shortStatus !== undefined ? { shortStatus } : {}),
         ...(partnerStatus !== undefined && mCols.partnerStatus !== undefined ? { partnerStatus } : {}),
         ...(mCols.industry !== undefined ? { industry } : {}),
+        ...(fleetSize !== undefined ? { fleetSize } : {}),
       });
     }
   }

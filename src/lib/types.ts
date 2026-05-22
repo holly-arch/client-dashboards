@@ -19,6 +19,7 @@ export interface MeetingRecord {
   shortStatus?: string;
   partnerStatus?: string;
   industry?: string;
+  fleetSize?: number;
 }
 
 export interface LeadRecord {
@@ -43,6 +44,7 @@ export interface DashboardMetrics {
   awaitingReschedule: number;
   leadsGenerated: number;
   leadsConvertedToMeetings: number;
+  avgFleetSize?: number;
 }
 
 export interface TouchpointRow {
