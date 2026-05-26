@@ -62,8 +62,21 @@ export interface RoiEntry {
   notes?: string;
 }
 
+export interface RoiOpportunity {
+  opportunity: string;
+  pipelineValue?: number;
+  contractValue?: number;
+  monthly: { year: number; month: number; amount: number }[]; // month is 0-indexed
+  notes?: string;
+  // Derived (computed in buildRoiSummary):
+  totalContract: number;
+  billed: number;
+  toBeBilled: number;
+}
+
 export interface RoiSummary {
   entries: RoiEntry[];
+  opportunities: RoiOpportunity[];
   revenueTotal: number;
   pipelineTotal: number;
   revenue: string;

@@ -29,6 +29,7 @@ export async function GET(request: Request) {
       raw.websiteInbounds,
       raw.roiEntries,
       raw.hasRoiTab,
+      raw.roiOpportunities,
     );
 
     return NextResponse.json(data);

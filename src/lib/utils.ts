@@ -1,4 +1,4 @@
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiOpportunity, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
 
 const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
@@ -98,12 +98,70 @@ function buildDealNote(entries: RoiEntry[], field: 'revenue' | 'pipeline'): stri
   return rest > 0 ? `${shown.join(' + ')} and ${rest} more` : shown.join(' + ');
 }
 
-export function buildRoiSummary(entries: RoiEntry[], hasRoiTab: boolean): RoiSummary | undefined {
+// Merge sheet rows that share an opportunity name (e.g. YTL appears as one
+// revenue row and one pipeline row — they roll up into a single opportunity
+// in the dashboard table). Then compute the billed / to-be-billed split using
+// today's month/year as the cutoff: anything in the current or earlier months
+// counts as billed.
+function mergeAndComputeOpportunities(rows: RoiOpportunity[]): RoiOpportunity[] {
+  const now = new Date();
+  const todayKey = now.getFullYear() * 12 + now.getMonth();
+
+  const byName = new Map<string, RoiOpportunity>();
+  for (const r of rows) {
+    const key = r.opportunity.trim();
+    const existing = byName.get(key);
+    if (existing) {
+      existing.pipelineValue = (existing.pipelineValue ?? 0) + (r.pipelineValue ?? 0) || undefined;
+      existing.contractValue = (existing.contractValue ?? 0) + (r.contractValue ?? 0) || undefined;
+      existing.monthly.push(...r.monthly);
+      if (r.notes && !existing.notes) existing.notes = r.notes;
+    } else {
+      byName.set(key, {
+        opportunity: r.opportunity,
+        pipelineValue: r.pipelineValue,
+        contractValue: r.contractValue,
+        monthly: [...r.monthly],
+        notes: r.notes,
+        totalContract: 0,
+        billed: 0,
+        toBeBilled: 0,
+      });
+    }
+  }
+
+  const merged: RoiOpportunity[] = [];
+  for (const o of byName.values()) {
+    const monthsSum = o.monthly.reduce((s, m) => s + m.amount, 0);
+    const pastSum = o.monthly
+      .filter((m) => m.year * 12 + m.month <= todayKey)
+      .reduce((s, m) => s + m.amount, 0);
+    const futureSum = monthsSum - pastSum;
+    o.totalContract = (o.contractValue ?? 0) + monthsSum;
+    // Contract Value with no monthly split = "already billed" (per plan decision).
+    o.billed = (o.contractValue ?? 0) + pastSum;
+    o.toBeBilled = futureSum;
+    merged.push(o);
+  }
+  // Sort biggest first — Pipeline-only deals still surface alongside contracted ones.
+  merged.sort((a, b) =>
+    (b.totalContract + (b.pipelineValue ?? 0)) - (a.totalContract + (a.pipelineValue ?? 0)),
+  );
+  return merged;
+}
+
+export function buildRoiSummary(
+  entries: RoiEntry[],
+  hasRoiTab: boolean,
+  rawOpportunities: RoiOpportunity[] = [],
+): RoiSummary | undefined {
   if (!hasRoiTab) return undefined;
   const revenueTotal = entries.reduce((s, e) => s + (e.revenue ?? 0), 0);
   const pipelineTotal = entries.reduce((s, e) => s + (e.pipeline ?? 0), 0);
+  const opportunities = mergeAndComputeOpportunities(rawOpportunities);
   return {
     entries,
+    opportunities,
     revenueTotal,
     pipelineTotal,
     revenue: revenueTotal > 0 ? formatGBP(revenueTotal) : 'N/A',
@@ -127,6 +185,7 @@ export function buildDashboardData(
   websiteInbounds?: WebsiteInboundRecord[],
   roiEntries?: RoiEntry[],
   hasRoiTab?: boolean,
+  roiOpportunities?: RoiOpportunity[],
 ): DashboardData {
   const range = getDateRange(period);
 
@@ -195,7 +254,7 @@ export function buildDashboardData(
 
   // ROI summary — lifetime totals across all entries, ignores the time filter
   // because revenue/pipeline figures don't make sense filtered to "this week".
-  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false);
+  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false, roiOpportunities ?? []);
 
   return {
     meetings: filteredMeetings,

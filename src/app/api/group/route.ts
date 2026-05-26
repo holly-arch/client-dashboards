@@ -60,6 +60,7 @@ export async function GET(request: Request) {
     let allMeetings: typeof rawDataResults[0]['raw'] extends null ? never : NonNullable<typeof rawDataResults[0]['raw']>['meetings'] = [];
     let allLeads: typeof rawDataResults[0]['raw'] extends null ? never : NonNullable<typeof rawDataResults[0]['raw']>['leads'] = [];
     const allRoiEntries: NonNullable<typeof rawDataResults[0]['raw']>['roiEntries'] = [];
+    const allRoiOpportunities: NonNullable<typeof rawDataResults[0]['raw']>['roiOpportunities'] = [];
     let anyRoiTab = false;
 
     for (const result of rawDataResults) {
@@ -72,6 +73,7 @@ export async function GET(request: Request) {
           undefined,
           result.raw.roiEntries,
           result.raw.hasRoiTab,
+          result.raw.roiOpportunities,
         );
         clients.push({ name: result.name, url: result.url, data });
         allMeetings = allMeetings.concat(result.raw.meetings);
@@ -79,6 +81,7 @@ export async function GET(request: Request) {
         if (result.raw.hasRoiTab) {
           anyRoiTab = true;
           allRoiEntries.push(...result.raw.roiEntries);
+          allRoiOpportunities.push(...result.raw.roiOpportunities);
         }
       }
     }
@@ -95,6 +98,7 @@ export async function GET(request: Request) {
       undefined,
       allRoiEntries,
       anyRoiTab,
+      allRoiOpportunities,
     );
 
     return NextResponse.json({

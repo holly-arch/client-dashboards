@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiOpportunity } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -114,6 +114,21 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
 // (used by upcoming dashboard tiles — not yet surfaced).
 function isMonthYearHeader(h: string): boolean {
   return /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}$/i.test(h.trim());
+}
+
+const MONTH_NAME_TO_IDX: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+function parseMonthYearHeader(h: string): { year: number; month: number } | null {
+  const m = h.trim().toLowerCase().match(/^([a-z]{3,})[a-z]*\s+(\d{2,4})$/);
+  if (!m) return null;
+  const monthIdx = MONTH_NAME_TO_IDX[m[1].slice(0, 3)];
+  if (monthIdx === undefined) return null;
+  let year = parseInt(m[2], 10);
+  if (year < 100) year += year > 50 ? 1900 : 2000;
+  return { year, month: monthIdx };
 }
 
 const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -260,6 +275,7 @@ export async function fetchDashboardRawData(
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
   roiEntries: RoiEntry[];
+  roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
 }> {
   const sheetId = overrideSheetId || process.env.GOOGLE_SHEET_ID;
@@ -447,10 +463,13 @@ export async function fetchDashboardRawData(
 
   // --- Process ROI ---
   // Schema: Opportunity | Pipeline Value | Contract Value | Notes | <Mon YYYY> | <Mon YYYY> | ...
-  // Each row may contribute up to two RoiEntries — one for revenue (sum of
-  // monthly columns + Contract Value fallback), one for pipeline (Pipeline
-  // Value column). Notes are auto-detected if the column exists.
+  // We emit two outputs:
+  //   1. roiEntries (legacy) — flat revenue/pipeline per row, used by the
+  //      auto-generated revenueNote / pipelineNote subtitles.
+  //   2. roiOpportunities — one entry per sheet row with raw monthly amounts
+  //      preserved so the dashboard can compute Billed vs To Be Billed.
   const roiEntries: RoiEntry[] = [];
+  const roiOpportunities: RoiOpportunity[] = [];
   const { rows: roiRows, exists: hasRoiTab } = roiResult;
   if (roiRows.length > 1) {
     const lowerHeaders = roiRows[0].map((h) => (h || '').toLowerCase().trim());
@@ -460,16 +479,12 @@ export async function fetchDashboardRawData(
     const pipelineValueIdx = findIdx(['pipeline value', 'pipeline']);
     const contractValueIdx = findIdx(['contract value', 'contract', 'total value']);
     const notesIdx = findIdx(['notes', 'note', 'comment']);
-    const monthIndices = lowerHeaders
-      .map((h, i) => ({ h, i }))
-      .filter(({ h, i }) =>
-        i !== opportunityIdx &&
-        i !== pipelineValueIdx &&
-        i !== contractValueIdx &&
-        i !== notesIdx &&
-        isMonthYearHeader(h),
-      )
-      .map(({ i }) => i);
+    const monthCols: { idx: number; year: number; month: number }[] = [];
+    for (let c = 0; c < lowerHeaders.length; c++) {
+      if (c === opportunityIdx || c === pipelineValueIdx || c === contractValueIdx || c === notesIdx) continue;
+      const parsed = parseMonthYearHeader(lowerHeaders[c]);
+      if (parsed) monthCols.push({ idx: c, ...parsed });
+    }
 
     for (let i = 1; i < roiRows.length; i++) {
       const row = roiRows[i];
@@ -478,13 +493,20 @@ export async function fetchDashboardRawData(
 
       const pipelineAmount = parseCurrency(getVal(row, pipelineValueIdx));
       const contractAmount = parseCurrency(getVal(row, contractValueIdx));
+      const monthly: { year: number; month: number; amount: number }[] = [];
       let monthsTotal = 0;
-      for (const idx of monthIndices) {
+      for (const { idx, year, month } of monthCols) {
         const n = parseCurrency(getVal(row, idx));
-        if (n !== undefined) monthsTotal += n;
+        if (n !== undefined) {
+          monthly.push({ year, month, amount: n });
+          monthsTotal += n;
+        }
       }
       const revenueTotal = monthsTotal + (contractAmount ?? 0);
       const notes = notesIdx >= 0 ? getVal(row, notesIdx) : '';
+
+      // Skip rows that have no signal at all.
+      if (revenueTotal === 0 && (pipelineAmount === undefined || pipelineAmount === 0)) continue;
 
       if (revenueTotal > 0) {
         roiEntries.push({
@@ -502,6 +524,20 @@ export async function fetchDashboardRawData(
           ...(notes ? { notes } : {}),
         });
       }
+
+      // Derived fields (totalContract / billed / toBeBilled) are computed in
+      // buildRoiSummary after rows are merged by opportunity name. Initialise
+      // to zero here.
+      roiOpportunities.push({
+        opportunity: deal,
+        ...(pipelineAmount !== undefined && pipelineAmount > 0 ? { pipelineValue: pipelineAmount } : {}),
+        ...(contractAmount !== undefined && contractAmount > 0 ? { contractValue: contractAmount } : {}),
+        monthly,
+        ...(notes ? { notes } : {}),
+        totalContract: 0,
+        billed: 0,
+        toBeBilled: 0,
+      });
     }
   }
 
@@ -511,6 +547,7 @@ export async function fetchDashboardRawData(
     touchpointRows: parsedTouchpoints,
     websiteInbounds,
     roiEntries,
+    roiOpportunities,
     hasRoiTab,
   };
 }
@@ -524,6 +561,7 @@ export function shiftDatesToToday(raw: {
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
   roiEntries: RoiEntry[];
+  roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
 }): typeof raw {
   const candidates: number[] = [];
@@ -568,6 +606,7 @@ export function shiftDatesToToday(raw: {
     })),
     websiteInbounds: raw.websiteInbounds,
     roiEntries: raw.roiEntries,
+    roiOpportunities: raw.roiOpportunities,
     hasRoiTab: raw.hasRoiTab,
   };
 }
