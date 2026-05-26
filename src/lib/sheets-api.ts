@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -103,6 +103,14 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   status: ['status', 'opportunity status', 'pipeline status'],
   lytxNotes: ['lytx notes'],
   industry: ['industry'],
+};
+
+const ROI_COLUMN_MATCHERS: Record<string, string[]> = {
+  month: ['month', 'period', 'date'],
+  deal: ['deal name', 'deal', 'client', 'company', 'description'],
+  revenue: ['revenue', 'revenue generated', 'revenue closed', 'closed'],
+  pipeline: ['pipeline', 'pipeline value', 'forecast'],
+  notes: ['notes', 'note', 'comment'],
 };
 
 const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -215,6 +223,17 @@ function getVal(row: string[], idx: number | undefined): string {
   return (row[idx] || '').trim();
 }
 
+// Strip currency formatting (£, $, commas, spaces) and parse. Returns undefined
+// for blank / non-numeric / zero so callers can drop empty rows cleanly.
+function parseCurrency(raw: string): number | undefined {
+  if (!raw) return undefined;
+  const cleaned = raw.replace(/[£$,\s]/g, '').trim();
+  if (!cleaned) return undefined;
+  const n = parseFloat(cleaned);
+  if (isNaN(n) || n === 0) return undefined;
+  return n;
+}
+
 // Some sheets use numbers for attendance: 1=Attended, 2=Awaiting Reschedule, 3=Cancelled, 4=Upcoming
 function normaliseAttendance(raw: string): string {
   if (!raw) return '';
@@ -237,6 +256,8 @@ export async function fetchDashboardRawData(
   leads: LeadRecord[];
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
+  roiEntries: RoiEntry[];
+  hasRoiTab: boolean;
 }> {
   const sheetId = overrideSheetId || process.env.GOOGLE_SHEET_ID;
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID environment variable is not set');
@@ -244,12 +265,15 @@ export async function fetchDashboardRawData(
   const meetingsTab = overrideMeetingsTab || process.env.MEETINGS_TAB || 'Meetings booked';
   const leadsTab = overrideLeadsTab || process.env.LEADS_TAB || 'Leads';
 
-  // Fetch all tabs in parallel (Touchpoints + Website Inbounds tabs are optional — fail silently)
-  const [meetingRows, leadRows, touchpointRows, inboundRows] = await Promise.all([
+  // Fetch all tabs in parallel (Touchpoints + Website Inbounds + ROI tabs are optional — fail silently).
+  // ROI fetch uses a sentinel `null` for "tab doesn't exist" so we can distinguish missing tab from
+  // empty tab (clients who created the tab but haven't entered deals yet should still see the ROI card).
+  const [meetingRows, leadRows, touchpointRows, inboundRows, roiResult] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
     fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
     fetchSheet(sheetId, 'Website Inbounds').catch(() => [] as string[][]),
+    fetchSheet(sheetId, 'ROI').then((rows) => ({ rows, exists: true })).catch(() => ({ rows: [] as string[][], exists: false })),
   ]);
 
   // --- Process Meetings ---
@@ -418,7 +442,36 @@ export async function fetchDashboardRawData(
     }
   }
 
-  return { meetings, leads, touchpointRows: parsedTouchpoints, websiteInbounds };
+  // --- Process ROI ---
+  const roiEntries: RoiEntry[] = [];
+  const { rows: roiRows, exists: hasRoiTab } = roiResult;
+  if (roiRows.length > 1) {
+    const rCols = detectColumns(roiRows[0], ROI_COLUMN_MATCHERS);
+    for (let i = 1; i < roiRows.length; i++) {
+      const row = roiRows[i];
+      const deal = getVal(row, rCols.deal);
+      const revenue = parseCurrency(getVal(row, rCols.revenue));
+      const pipeline = parseCurrency(getVal(row, rCols.pipeline));
+      // Skip rows that contribute neither a revenue nor a pipeline value.
+      if (revenue === undefined && pipeline === undefined) continue;
+      roiEntries.push({
+        month: getVal(row, rCols.month),
+        deal,
+        ...(revenue !== undefined ? { revenue } : {}),
+        ...(pipeline !== undefined ? { pipeline } : {}),
+        ...(rCols.notes !== undefined ? { notes: getVal(row, rCols.notes) } : {}),
+      });
+    }
+  }
+
+  return {
+    meetings,
+    leads,
+    touchpointRows: parsedTouchpoints,
+    websiteInbounds,
+    roiEntries,
+    hasRoiTab,
+  };
 }
 
 // Demo dashboard: shift every date so the most recent meeting/lead lands on
@@ -429,6 +482,8 @@ export function shiftDatesToToday(raw: {
   leads: LeadRecord[];
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
+  roiEntries: RoiEntry[];
+  hasRoiTab: boolean;
 }): typeof raw {
   const candidates: number[] = [];
   for (const m of raw.meetings) {
@@ -471,6 +526,8 @@ export function shiftDatesToToday(raw: {
       week: shift(t.week) || t.week,
     })),
     websiteInbounds: raw.websiteInbounds,
+    roiEntries: raw.roiEntries,
+    hasRoiTab: raw.hasRoiTab,
   };
 }
 

@@ -1,4 +1,4 @@
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
 
 const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
@@ -79,6 +79,40 @@ function isInRange(dateStr: string, range: { start: Date; end: Date } | null): b
   return d >= range.start && d <= range.end;
 }
 
+function formatGBP(n: number): string {
+  return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
+}
+
+// Build a "Deal A £X + Deal B £Y" string for the ROI card subtitle. Caps at 4
+// named deals + "and N more" so it doesn't overflow on dashboards with lots
+// of small line items. Skips entries without a deal name.
+function buildDealNote(entries: RoiEntry[], field: 'revenue' | 'pipeline'): string | undefined {
+  const named = entries
+    .filter((e) => e[field] !== undefined && e[field]! > 0 && e.deal)
+    .map((e) => ({ deal: e.deal, amount: e[field] as number }));
+  if (named.length === 0) return undefined;
+
+  const MAX = 4;
+  const shown = named.slice(0, MAX).map((d) => `${d.deal} ${formatGBP(d.amount)}`);
+  const rest = named.length - MAX;
+  return rest > 0 ? `${shown.join(' + ')} and ${rest} more` : shown.join(' + ');
+}
+
+export function buildRoiSummary(entries: RoiEntry[], hasRoiTab: boolean): RoiSummary | undefined {
+  if (!hasRoiTab) return undefined;
+  const revenueTotal = entries.reduce((s, e) => s + (e.revenue ?? 0), 0);
+  const pipelineTotal = entries.reduce((s, e) => s + (e.pipeline ?? 0), 0);
+  return {
+    entries,
+    revenueTotal,
+    pipelineTotal,
+    revenue: revenueTotal > 0 ? formatGBP(revenueTotal) : 'N/A',
+    pipeline: pipelineTotal > 0 ? formatGBP(pipelineTotal) : 'N/A',
+    revenueNote: buildDealNote(entries, 'revenue'),
+    pipelineNote: buildDealNote(entries, 'pipeline'),
+  };
+}
+
 export function formatDate(dateStr: string | null): string {
   if (!dateStr) return '';
   const d = new Date(dateStr);
@@ -91,6 +125,8 @@ export function buildDashboardData(
   period: TimePeriod,
   touchpointRows?: TouchpointRow[],
   websiteInbounds?: WebsiteInboundRecord[],
+  roiEntries?: RoiEntry[],
+  hasRoiTab?: boolean,
 ): DashboardData {
   const range = getDateRange(period);
 
@@ -157,12 +193,17 @@ export function buildDashboardData(
   // is stable regardless of which period is currently selected.
   const availableQuarters = deriveAvailableQuarters(meetings, leads);
 
+  // ROI summary — lifetime totals across all entries, ignores the time filter
+  // because revenue/pipeline figures don't make sense filtered to "this week".
+  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false);
+
   return {
     meetings: filteredMeetings,
     leads: filteredLeads,
     statusCounts,
     metrics,
     touchpoints,
+    ...(roi ? { roi } : {}),
     ...(websiteInbounds && websiteInbounds.length > 0 ? { websiteInbounds } : {}),
     ...(availableQuarters.length > 0 ? { availableQuarters } : {}),
     lastUpdated: new Date().toISOString(),

@@ -21,7 +21,15 @@ export async function GET(request: Request) {
 
     let raw = await fetchDashboardRawData();
     if (process.env.CLIENT_NAME === 'Demo') raw = shiftDatesToToday(raw);
-    const data = buildDashboardData(raw.meetings, raw.leads, period, raw.touchpointRows, raw.websiteInbounds);
+    const data = buildDashboardData(
+      raw.meetings,
+      raw.leads,
+      period,
+      raw.touchpointRows,
+      raw.websiteInbounds,
+      raw.roiEntries,
+      raw.hasRoiTab,
+    );
 
     return NextResponse.json(data);
   } catch (error) {

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
-import { getRoiFor } from '@/lib/client-revenues';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
 import ROICard from './ROICard';
@@ -189,8 +188,14 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
-        {getRoiFor(clientName) && <ROICard {...getRoiFor(clientName)!} />}
-        {['Evergreen Security'].includes(clientName) && <ROICard />}
+        {data.roi && (
+          <ROICard
+            revenue={data.roi.revenue}
+            revenueNote={data.roi.revenueNote}
+            pipeline={data.roi.pipeline}
+            pipelineNote={data.roi.pipelineNote}
+          />
+        )}
         {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
         <MetricCards metrics={data.metrics} />

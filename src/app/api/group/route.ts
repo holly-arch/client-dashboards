@@ -59,21 +59,43 @@ export async function GET(request: Request) {
     const clients: ClientData[] = [];
     let allMeetings: typeof rawDataResults[0]['raw'] extends null ? never : NonNullable<typeof rawDataResults[0]['raw']>['meetings'] = [];
     let allLeads: typeof rawDataResults[0]['raw'] extends null ? never : NonNullable<typeof rawDataResults[0]['raw']>['leads'] = [];
+    const allRoiEntries: NonNullable<typeof rawDataResults[0]['raw']>['roiEntries'] = [];
+    let anyRoiTab = false;
 
     for (const result of rawDataResults) {
       if (result.raw) {
-        const data = buildDashboardData(result.raw.meetings, result.raw.leads, period);
+        const data = buildDashboardData(
+          result.raw.meetings,
+          result.raw.leads,
+          period,
+          undefined,
+          undefined,
+          result.raw.roiEntries,
+          result.raw.hasRoiTab,
+        );
         clients.push({ name: result.name, url: result.url, data });
         allMeetings = allMeetings.concat(result.raw.meetings);
         allLeads = allLeads.concat(result.raw.leads);
+        if (result.raw.hasRoiTab) {
+          anyRoiTab = true;
+          allRoiEntries.push(...result.raw.roiEntries);
+        }
       }
     }
 
     // Sort clients by meetings booked descending
     clients.sort((a, b) => b.data.metrics.meetingsBooked - a.data.metrics.meetingsBooked);
 
-    // Build aggregate from all combined meetings and leads
-    const aggregate = buildDashboardData(allMeetings, allLeads, period);
+    // Build aggregate from all combined meetings, leads, and ROI entries
+    const aggregate = buildDashboardData(
+      allMeetings,
+      allLeads,
+      period,
+      undefined,
+      undefined,
+      allRoiEntries,
+      anyRoiTab,
+    );
 
     return NextResponse.json({
       clients,

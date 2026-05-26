@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
-import { getGroupRoi } from '@/lib/client-revenues';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
 import GroupROICard from './GroupROICard';
@@ -171,7 +170,7 @@ export default function GroupDashboard() {
   if (!data) return null;
 
   const m = data.aggregate.metrics;
-  const groupRoi = getGroupRoi(data.clients.map((c) => c.name));
+  const groupRoi = data.aggregate.roi;
   // Only show clients that were active in the selected period (any meetings or leads).
   const activeClients = data.clients.filter(
     (c) => c.data.metrics.meetingsBooked > 0 || c.data.metrics.leadsGenerated > 0,
@@ -193,7 +192,7 @@ export default function GroupDashboard() {
           <TimeFilter selected={period} onChange={setPeriod} quarters={data.aggregate.availableQuarters} />
         </div>
 
-        <GroupROICard revenue={groupRoi.revenue} pipeline={groupRoi.pipeline} />
+        {groupRoi && <GroupROICard revenue={groupRoi.revenue} pipeline={groupRoi.pipeline} />}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <MetricCard

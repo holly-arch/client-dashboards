@@ -54,6 +54,24 @@ export interface TouchpointRow {
   email?: number;
 }
 
+export interface RoiEntry {
+  month: string;
+  deal: string;
+  revenue?: number;
+  pipeline?: number;
+  notes?: string;
+}
+
+export interface RoiSummary {
+  entries: RoiEntry[];
+  revenueTotal: number;
+  pipelineTotal: number;
+  revenue: string;
+  pipeline: string;
+  revenueNote?: string;
+  pipelineNote?: string;
+}
+
 export interface WebsiteInboundRecord {
   id: string;
   firstName: string;
@@ -70,6 +88,7 @@ export interface DashboardData {
   statusCounts: Record<string, number>;
   metrics: DashboardMetrics;
   touchpoints?: { calls?: number; linkedin?: number; email?: number };
+  roi?: RoiSummary;
   websiteInbounds?: WebsiteInboundRecord[];
   availableQuarters?: QuarterOption[];
   lastUpdated: string;
