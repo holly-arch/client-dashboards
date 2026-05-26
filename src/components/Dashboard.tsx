@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
+import ROICard from './ROICard';
 import RoiTable from './RoiTable';
 import TouchpointsCard from './TouchpointsCard';
 import FleetSizeCard from './FleetSizeCard';
@@ -188,7 +189,7 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
-        {data.roi && data.roi.opportunities.length > 0 && <RoiTable opportunities={data.roi.opportunities} />}
+        {data.roi && <ROICard revenue={data.roi.revenue} pipeline={data.roi.pipeline} />}
         {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
         <MetricCards metrics={data.metrics} />
@@ -201,6 +202,8 @@ export default function Dashboard() {
         {data.websiteInbounds && data.websiteInbounds.length > 0 && (
           <WebsiteInboundsSection inbounds={data.websiteInbounds} />
         )}
+
+        {data.roi && data.roi.opportunities.length > 0 && <RoiTable opportunities={data.roi.opportunities} />}
       </main>
 
       <Footer />
