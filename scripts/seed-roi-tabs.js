@@ -1,60 +1,79 @@
 #!/usr/bin/env node
 /**
- * One-off migration: create an "ROI" tab on each PTG client sheet and seed it
- * with the values that used to live in src/lib/client-revenues.ts.
+ * One-off migration: (re)create the wide-format ROI tab on each PTG client sheet.
+ *
+ * Wide format: each row = one deal/opportunity (with a Type column that says
+ * Revenue or Pipeline). Columns to the right of the metadata are reporting
+ * periods (e.g. "Historical", "May 2026", "Jun 2026"). The dashboard sums
+ * every period column on every row to get the headline figure.
  *
  * Usage:
- *   1. Pull credentials from a Vercel project that has them:
+ *   1. Link a project that has the credentials + GROUP_CLIENTS:
+ *        rm -rf .vercel
+ *        vercel link --yes --project=prime-trading-group-dashboard --scope holly-archs-projects
  *        vercel env pull .env.temp --environment production
- *      (any linked project works — they share the same Google service account)
- *   2. Pull the GROUP_CLIENTS list from the PTG project:
- *        rm -rf .vercel && vercel link --yes --project=prime-trading-group-dashboard --scope holly-archs-projects
- *        vercel env pull .env.temp --environment production
- *   3. Run:
- *        node scripts/seed-roi-tabs.js [--dry-run]
+ *   2. Dry-run:  node scripts/seed-roi-tabs.js --dry-run
+ *   3. For real: node scripts/seed-roi-tabs.js
  *
- * The script is idempotent for "tab already exists" — it logs and skips
- * those clients so re-running won't double-write or fail noisily.
- *
- * The service account needs Editor access on each client's sheet. Lytx has
- * it already (for the editable cells feature); the 6 PTG sheets currently
- * have Viewer only — bump them to Editor before running this.
+ * If an ROI tab already exists it's deleted and rebuilt — destructive by design
+ * so the seed always matches this script's output. Run it again after editing
+ * the snapshot if anything drifts.
  */
 
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// --- Hardcoded current ROI snapshot (copied from src/lib/client-revenues.ts
-//     before deletion, plus the deal-level breakdowns Holly noted) ---
+// --- Current ROI snapshot. One row per (deal, type). Each entry's `periods`
+//     maps a column header -> amount. The set of period columns is the union
+//     of every entry's periods plus "Historical" first if anyone uses it. ---
 const ROI_BY_CLIENT = {
   'Prime Secure': [
-    { month: 'Historical', deal: 'BrynBuild', revenue: 1188.57 },
-    { month: 'Historical', deal: 'Coffey Construction Ltd', revenue: 9107.14 },
+    { deal: 'BrynBuild', type: 'Revenue', periods: { Historical: 1188.57 } },
+    { deal: 'Coffey Construction Ltd', type: 'Revenue', periods: { Historical: 9107.14 } },
   ],
   'Select Group': [
-    { month: 'Historical', deal: 'Closed deals', revenue: 18000 },
+    { deal: 'Closed deals', type: 'Revenue', periods: { Historical: 18000 } },
   ],
   'Catapult Marketing': [
-    { month: 'Historical', deal: 'Closed deals', revenue: 18900 },
+    { deal: 'Closed deals', type: 'Revenue', periods: { Historical: 18900 } },
   ],
   'Trust Hire': [
-    { month: 'Historical', deal: 'YTL', revenue: 34280 },
-    { month: 'Historical', deal: 'YTL', pipeline: 59240 },
-    { month: 'Historical', deal: 'Lancer Scott', pipeline: 121250 },
-    { month: 'June 2026', deal: 'Armac', pipeline: 4000, notes: 'expected to close in June' },
+    { deal: 'YTL', type: 'Revenue', periods: { Historical: 34280 } },
+    { deal: 'YTL', type: 'Pipeline', periods: { Historical: 59240 } },
+    { deal: 'Lancer Scott', type: 'Pipeline', periods: { Historical: 121250 } },
+    { deal: 'Armac', type: 'Pipeline', notes: 'expected to close in June', periods: { 'Jun 2026': 4000 } },
   ],
   'V360': [
-    { month: 'Historical', deal: 'Creynolds Lane v1', revenue: 67060 },
-    { month: 'Historical', deal: 'vPods Birmingham', revenue: 720 },
+    { deal: 'Creynolds Lane v1', type: 'Revenue', periods: { Historical: 67060 } },
+    { deal: 'vPods Birmingham', type: 'Revenue', periods: { Historical: 720 } },
   ],
   'Evergreen Security': [
-    // intentionally empty — tab is created with just headers so the ROI card
-    // still renders (showing "N/A") and the client can fill in deals as they close.
+    // Intentionally empty — headers only so the ROI card still renders (N/A).
   ],
 };
 
-const HEADERS = ['Month', 'Deal Name', 'Revenue', 'Pipeline', 'Notes'];
+// Help text written into a far-right column so clients can read it without
+// crowding their data. Lives at column M onwards — leaves cols D-L (9 slots)
+// for "Historical" + 8 monthly columns before the help bumps anything.
+const HELP_COLUMN_INDEX = 12; // M
+const HELP_LINES = [
+  'HOW TO USE',
+  '• One row per deal (or deal + type)',
+  '• Type column: "Revenue" (closed/billed)',
+  '  or "Pipeline" (in progress)',
+  '• Amounts go under the month column',
+  '  when billed / expected',
+  '• Recurring? Same row, multiple months',
+  '• New month? Add a column to the right',
+  '  (e.g. "Aug 2026")',
+  '• Numbers only — no £ or commas',
+  '• Don\'t rename the tab or the Deal Name /',
+  '  Type / Notes column headers',
+  '• Pipeline closed? Change Type to Revenue',
+];
+
+const FIXED_HEADERS = ['Deal Name', 'Type', 'Notes'];
 
 // --- env loading (.env.temp first, then process.env) ---
 function loadEnv() {
@@ -72,9 +91,7 @@ function loadEnv() {
 async function getAccessToken() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  if (!email || !privateKey) {
-    throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY');
-  }
+  if (!email || !privateKey) throw new Error('Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY');
   const now = Math.floor(Date.now() / 1000);
   const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
   const claims = Buffer.from(JSON.stringify({
@@ -92,26 +109,26 @@ async function getAccessToken() {
     body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
   });
   if (!res.ok) throw new Error(`Auth failed: ${res.status} ${await res.text()}`);
-  const data = await res.json();
-  return data.access_token;
+  return (await res.json()).access_token;
 }
 
-async function listTabs(token, sheetId) {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties.title`;
+async function listSheets(token, sheetId) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties(sheetId,title)`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw new Error(`listTabs failed (${res.status}): ${await res.text()}`);
+  if (!res.ok) throw new Error(`listSheets failed (${res.status}): ${await res.text()}`);
   const json = await res.json();
-  return (json.sheets || []).map((s) => s.properties.title);
+  return (json.sheets || []).map((s) => s.properties);
 }
 
-async function addTab(token, sheetId, title) {
+async function batchUpdate(token, sheetId, requests) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`;
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ requests: [{ addSheet: { properties: { title } } }] }),
+    body: JSON.stringify({ requests }),
   });
-  if (!res.ok) throw new Error(`addTab failed (${res.status}): ${await res.text()}`);
+  if (!res.ok) throw new Error(`batchUpdate failed (${res.status}): ${await res.text()}`);
+  return res.json();
 }
 
 async function writeRange(token, sheetId, range, values) {
@@ -124,38 +141,73 @@ async function writeRange(token, sheetId, range, values) {
   if (!res.ok) throw new Error(`writeRange failed (${res.status}): ${await res.text()}`);
 }
 
-function rowsForClient(name) {
-  const entries = ROI_BY_CLIENT[name] || [];
-  return entries.map((e) => [
-    e.month || '',
-    e.deal || '',
-    e.revenue !== undefined ? e.revenue : '',
-    e.pipeline !== undefined ? e.pipeline : '',
-    e.notes || '',
-  ]);
+function colLetter(idx) {
+  let s = '';
+  let n = idx;
+  while (n >= 0) {
+    s = String.fromCharCode((n % 26) + 65) + s;
+    n = Math.floor(n / 26) - 1;
+  }
+  return s;
+}
+
+// Build the table for a client: union of period columns across all entries,
+// "Historical" first if used, then chronological-ish.
+function buildTable(entries) {
+  const periodSet = new Set();
+  for (const e of entries) for (const k of Object.keys(e.periods || {})) periodSet.add(k);
+  const periods = [];
+  if (periodSet.has('Historical')) {
+    periods.push('Historical');
+    periodSet.delete('Historical');
+  }
+  for (const p of Array.from(periodSet).sort()) periods.push(p);
+
+  const headerRow = [...FIXED_HEADERS, ...periods];
+  const dataRows = entries.map((e) => {
+    const row = [e.deal, e.type, e.notes || ''];
+    for (const p of periods) row.push(e.periods?.[p] !== undefined ? e.periods[p] : '');
+    return row;
+  });
+  return { headerRow, dataRows, periodCount: periods.length };
 }
 
 async function seed(client, token, dryRun) {
   const { name, sheetId } = client;
-  const dataRows = rowsForClient(name);
+  const entries = ROI_BY_CLIENT[name] || [];
+  const { headerRow, dataRows, periodCount } = buildTable(entries);
+
   console.log(`\n=== ${name} ===`);
   console.log(`   sheetId: ${sheetId}`);
-  console.log(`   rows to seed: ${dataRows.length}`);
+  console.log(`   ${entries.length} deals, ${periodCount} period columns`);
   if (dryRun) {
-    for (const r of dataRows) console.log(`   ${JSON.stringify(r)}`);
+    console.log(`   headers: ${JSON.stringify(headerRow)}`);
+    for (const r of dataRows) console.log(`     ${JSON.stringify(r)}`);
     return;
   }
 
-  const tabs = await listTabs(token, sheetId);
-  if (tabs.includes('ROI')) {
-    console.log(`   SKIP — ROI tab already exists`);
-    return;
+  // Drop any existing ROI tab so we start clean.
+  const sheets = await listSheets(token, sheetId);
+  const existing = sheets.find((s) => s.title === 'ROI');
+  if (existing) {
+    await batchUpdate(token, sheetId, [{ deleteSheet: { sheetId: existing.sheetId } }]);
+  }
+  // Create the new ROI tab.
+  await batchUpdate(token, sheetId, [{ addSheet: { properties: { title: 'ROI' } } }]);
+
+  // Write the data table (headers + rows).
+  const tableValues = [headerRow, ...dataRows];
+  if (tableValues.length > 0) {
+    const lastCol = colLetter(headerRow.length - 1);
+    await writeRange(token, sheetId, `'ROI'!A1:${lastCol}${tableValues.length}`, tableValues);
   }
 
-  await addTab(token, sheetId, 'ROI');
-  const values = [HEADERS, ...dataRows];
-  await writeRange(token, sheetId, `'ROI'!A1:E${values.length}`, values);
-  console.log(`   ✓ created ROI tab + wrote ${values.length} rows (incl. headers)`);
+  // Write the help text far right, one line per row starting at row 1.
+  const helpCol = colLetter(HELP_COLUMN_INDEX);
+  const helpValues = HELP_LINES.map((line) => [line]);
+  await writeRange(token, sheetId, `'ROI'!${helpCol}1:${helpCol}${HELP_LINES.length}`, helpValues);
+
+  console.log(`   ✓ rebuilt ROI tab (${tableValues.length} table rows + help block at col ${helpCol})`);
 }
 
 async function main() {
@@ -170,7 +222,7 @@ async function main() {
     process.exit(1);
   }
   const clients = JSON.parse(groupRaw);
-  console.log(`${dryRun ? '[DRY RUN] ' : ''}Seeding ROI tab on ${clients.length} client sheets`);
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Rebuilding ROI tab on ${clients.length} client sheets (wide format)`);
 
   const token = dryRun ? null : await getAccessToken();
 
