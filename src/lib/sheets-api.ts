@@ -105,13 +105,16 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   industry: ['industry'],
 };
 
-const ROI_COLUMN_MATCHERS: Record<string, string[]> = {
-  month: ['month', 'period', 'date'],
-  deal: ['deal name', 'deal', 'client', 'company', 'description'],
-  revenue: ['revenue', 'revenue generated', 'revenue closed', 'closed'],
-  pipeline: ['pipeline', 'pipeline value', 'forecast'],
-  notes: ['notes', 'note', 'comment'],
-};
+// ROI tab schema: each row is one opportunity. Fixed metadata columns
+// (Opportunity, Pipeline Value, Contract Value, Notes) plus any number of
+// "Month YYYY" columns going forward from the client's engagement start.
+// - Sum of all month-year columns + Contract Value = revenue for that row
+// - Pipeline Value column = potential / un-signed pipeline for that row
+// Past months count as already-billed, future months as still-to-be-billed
+// (used by upcoming dashboard tiles — not yet surfaced).
+function isMonthYearHeader(h: string): boolean {
+  return /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}$/i.test(h.trim());
+}
 
 const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   firstName: ['first name', 'firstname', 'first', 'forename'],
@@ -443,24 +446,62 @@ export async function fetchDashboardRawData(
   }
 
   // --- Process ROI ---
+  // Schema: Opportunity | Pipeline Value | Contract Value | Notes | <Mon YYYY> | <Mon YYYY> | ...
+  // Each row may contribute up to two RoiEntries — one for revenue (sum of
+  // monthly columns + Contract Value fallback), one for pipeline (Pipeline
+  // Value column). Notes are auto-detected if the column exists.
   const roiEntries: RoiEntry[] = [];
   const { rows: roiRows, exists: hasRoiTab } = roiResult;
   if (roiRows.length > 1) {
-    const rCols = detectColumns(roiRows[0], ROI_COLUMN_MATCHERS);
+    const lowerHeaders = roiRows[0].map((h) => (h || '').toLowerCase().trim());
+    const findIdx = (candidates: string[]): number =>
+      lowerHeaders.findIndex((h) => candidates.some((c) => h === c));
+    const opportunityIdx = findIdx(['opportunity', 'deal name', 'deal', 'company', 'client']);
+    const pipelineValueIdx = findIdx(['pipeline value', 'pipeline']);
+    const contractValueIdx = findIdx(['contract value', 'contract', 'total value']);
+    const notesIdx = findIdx(['notes', 'note', 'comment']);
+    const monthIndices = lowerHeaders
+      .map((h, i) => ({ h, i }))
+      .filter(({ h, i }) =>
+        i !== opportunityIdx &&
+        i !== pipelineValueIdx &&
+        i !== contractValueIdx &&
+        i !== notesIdx &&
+        isMonthYearHeader(h),
+      )
+      .map(({ i }) => i);
+
     for (let i = 1; i < roiRows.length; i++) {
       const row = roiRows[i];
-      const deal = getVal(row, rCols.deal);
-      const revenue = parseCurrency(getVal(row, rCols.revenue));
-      const pipeline = parseCurrency(getVal(row, rCols.pipeline));
-      // Skip rows that contribute neither a revenue nor a pipeline value.
-      if (revenue === undefined && pipeline === undefined) continue;
-      roiEntries.push({
-        month: getVal(row, rCols.month),
-        deal,
-        ...(revenue !== undefined ? { revenue } : {}),
-        ...(pipeline !== undefined ? { pipeline } : {}),
-        ...(rCols.notes !== undefined ? { notes: getVal(row, rCols.notes) } : {}),
-      });
+      const deal = getVal(row, opportunityIdx);
+      if (!deal) continue;
+
+      const pipelineAmount = parseCurrency(getVal(row, pipelineValueIdx));
+      const contractAmount = parseCurrency(getVal(row, contractValueIdx));
+      let monthsTotal = 0;
+      for (const idx of monthIndices) {
+        const n = parseCurrency(getVal(row, idx));
+        if (n !== undefined) monthsTotal += n;
+      }
+      const revenueTotal = monthsTotal + (contractAmount ?? 0);
+      const notes = notesIdx >= 0 ? getVal(row, notesIdx) : '';
+
+      if (revenueTotal > 0) {
+        roiEntries.push({
+          month: '',
+          deal,
+          revenue: revenueTotal,
+          ...(notes ? { notes } : {}),
+        });
+      }
+      if (pipelineAmount !== undefined && pipelineAmount > 0) {
+        roiEntries.push({
+          month: '',
+          deal,
+          pipeline: pipelineAmount,
+          ...(notes ? { notes } : {}),
+        });
+      }
     }
   }
 
