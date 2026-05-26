@@ -105,28 +105,13 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   industry: ['industry'],
 };
 
-// ROI tab uses a wide format: fixed metadata columns (Deal Name, Type, Notes)
-// plus one column per reporting period (e.g. "May 2026", "Q2 2026", "Historical").
-// Period columns are auto-detected by header pattern so clients can add new months
-// without us touching code.
-const ROI_DEAL_HEADERS = ['deal name', 'deal', 'client', 'company', 'description', 'opportunity'];
-const ROI_TYPE_HEADERS = ['type', 'category', 'status', 'kind'];
-const ROI_NOTES_HEADERS = ['notes', 'note', 'comment'];
-
-function isRoiPeriodHeader(h: string): boolean {
-  if (!h) return false;
-  const t = h.toLowerCase().trim();
-  // Named months (full or abbreviated)
-  if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/.test(t)) return true;
-  // Quarters: q1, q2 2026, etc.
-  if (/^q[1-4]\b/.test(t)) return true;
-  // ISO-ish patterns: 2026, 2026-05, 05/2026
-  if (/^\d{4}([-/]\d{1,2})?$/.test(t)) return true;
-  if (/^\d{1,2}[-/]\d{2,4}$/.test(t)) return true;
-  // Explicit bucket labels for historical / legacy data
-  if (/^(historical|legacy|total|all[-\s]?time|pre[-\s]?\w*)/.test(t)) return true;
-  return false;
-}
+const ROI_COLUMN_MATCHERS: Record<string, string[]> = {
+  month: ['month', 'period', 'date'],
+  deal: ['deal name', 'deal', 'client', 'company', 'description'],
+  revenue: ['revenue', 'revenue generated', 'revenue closed', 'closed'],
+  pipeline: ['pipeline', 'pipeline value', 'forecast'],
+  notes: ['notes', 'note', 'comment'],
+};
 
 const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   firstName: ['first name', 'firstname', 'first', 'forename'],
@@ -457,44 +442,24 @@ export async function fetchDashboardRawData(
     }
   }
 
-  // --- Process ROI (wide format) ---
-  // Headers: Deal Name | Type | Notes | <period 1> | <period 2> | ...
-  // Each row is one deal-and-type combination; periods sum across the row to
-  // give that row's contribution. "Type" picks whether the row's amount lands
-  // in revenue or pipeline (default: revenue).
+  // --- Process ROI ---
   const roiEntries: RoiEntry[] = [];
   const { rows: roiRows, exists: hasRoiTab } = roiResult;
   if (roiRows.length > 1) {
-    const lowerHeaders = roiRows[0].map((h) => (h || '').toLowerCase().trim());
-    const findHeader = (candidates: string[]): number =>
-      lowerHeaders.findIndex((h) => candidates.some((c) => h === c || h.includes(c)));
-    const dealIdx = findHeader(ROI_DEAL_HEADERS);
-    const typeIdx = findHeader(ROI_TYPE_HEADERS);
-    const notesIdx = findHeader(ROI_NOTES_HEADERS);
-    const periodIndices = lowerHeaders
-      .map((h, i) => ({ h, i }))
-      .filter(({ h, i }) => i !== dealIdx && i !== typeIdx && i !== notesIdx && isRoiPeriodHeader(h))
-      .map(({ i }) => i);
-
+    const rCols = detectColumns(roiRows[0], ROI_COLUMN_MATCHERS);
     for (let i = 1; i < roiRows.length; i++) {
       const row = roiRows[i];
-      const deal = getVal(row, dealIdx);
-      if (!deal) continue;
-      const typeRaw = getVal(row, typeIdx).toLowerCase();
-      const isPipeline = typeRaw.startsWith('pipe') || typeRaw.startsWith('fore');
-
-      let total = 0;
-      for (const idx of periodIndices) {
-        const n = parseCurrency(getVal(row, idx));
-        if (n !== undefined) total += n;
-      }
-      if (total === 0) continue;
-
+      const deal = getVal(row, rCols.deal);
+      const revenue = parseCurrency(getVal(row, rCols.revenue));
+      const pipeline = parseCurrency(getVal(row, rCols.pipeline));
+      // Skip rows that contribute neither a revenue nor a pipeline value.
+      if (revenue === undefined && pipeline === undefined) continue;
       roiEntries.push({
-        month: '',
+        month: getVal(row, rCols.month),
         deal,
-        ...(isPipeline ? { pipeline: total } : { revenue: total }),
-        ...(notesIdx !== -1 ? { notes: getVal(row, notesIdx) } : {}),
+        ...(revenue !== undefined ? { revenue } : {}),
+        ...(pipeline !== undefined ? { pipeline } : {}),
+        ...(rCols.notes !== undefined ? { notes: getVal(row, rCols.notes) } : {}),
       });
     }
   }

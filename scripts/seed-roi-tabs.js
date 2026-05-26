@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 /**
- * One-off migration: (re)create the wide-format ROI tab on each PTG client sheet.
- *
- * Wide format: each row = one deal/opportunity (with a Type column that says
- * Revenue or Pipeline). Columns to the right of the metadata are reporting
- * periods (e.g. "Historical", "May 2026", "Jun 2026"). The dashboard sums
- * every period column on every row to get the headline figure.
+ * One-off migration: (re)create the ROI tab on each PTG client sheet using
+ * the long-format schema (Month | Deal Name | Revenue | Pipeline | Notes).
  *
  * Usage:
  *   1. Link a project that has the credentials + GROUP_CLIENTS:
@@ -16,64 +12,56 @@
  *   3. For real: node scripts/seed-roi-tabs.js
  *
  * If an ROI tab already exists it's deleted and rebuilt — destructive by design
- * so the seed always matches this script's output. Run it again after editing
- * the snapshot if anything drifts.
+ * so the seed always matches this script's output.
  */
 
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-// --- Current ROI snapshot. One row per (deal, type). Each entry's `periods`
-//     maps a column header -> amount. The set of period columns is the union
-//     of every entry's periods plus "Historical" first if anyone uses it. ---
+// --- Current ROI snapshot. Each row in the array = one row in the sheet. ---
 const ROI_BY_CLIENT = {
   'Prime Secure': [
-    { deal: 'BrynBuild', type: 'Revenue', periods: { Historical: 1188.57 } },
-    { deal: 'Coffey Construction Ltd', type: 'Revenue', periods: { Historical: 9107.14 } },
+    { month: '', deal: 'BrynBuild', revenue: 1188.57 },
+    { month: '', deal: 'Coffey Construction Ltd', revenue: 9107.14 },
   ],
   'Select Group': [
-    { deal: 'Closed deals', type: 'Revenue', periods: { Historical: 18000 } },
+    { month: '', deal: 'Closed deals', revenue: 18000 },
   ],
   'Catapult Marketing': [
-    { deal: 'Closed deals', type: 'Revenue', periods: { Historical: 18900 } },
+    { month: '', deal: 'Closed deals', revenue: 18900 },
   ],
   'Trust Hire': [
-    { deal: 'YTL', type: 'Revenue', periods: { Historical: 34280 } },
-    { deal: 'YTL', type: 'Pipeline', periods: { Historical: 59240 } },
-    { deal: 'Lancer Scott', type: 'Pipeline', periods: { Historical: 121250 } },
-    { deal: 'Armac', type: 'Pipeline', notes: 'expected to close in June', periods: { 'Jun 2026': 4000 } },
+    { month: '', deal: 'YTL', revenue: 34280 },
+    { month: '', deal: 'YTL', pipeline: 59240 },
+    { month: '', deal: 'Lancer Scott', pipeline: 121250 },
+    { month: 'June 2026', deal: 'Armac', pipeline: 4000, notes: 'expected to close in June' },
   ],
   'V360': [
-    { deal: 'Creynolds Lane v1', type: 'Revenue', periods: { Historical: 67060 } },
-    { deal: 'vPods Birmingham', type: 'Revenue', periods: { Historical: 720 } },
+    { month: '', deal: 'Creynolds Lane v1', revenue: 67060 },
+    { month: '', deal: 'vPods Birmingham', revenue: 720 },
   ],
   'Evergreen Security': [
-    // Intentionally empty — headers only so the ROI card still renders (N/A).
+    // intentionally empty — tab is created with just headers so the ROI card
+    // still renders (showing "N/A") and the client can fill in deals as they close.
   ],
 };
 
-// Help text written into a far-right column so clients can read it without
-// crowding their data. Lives at column M onwards — leaves cols D-L (9 slots)
-// for "Historical" + 8 monthly columns before the help bumps anything.
-const HELP_COLUMN_INDEX = 12; // M
+const HEADERS = ['Month', 'Deal Name', 'Revenue', 'Pipeline', 'Notes'];
+
+// Help text written into column G so clients can read it next to the table.
+const HELP_COLUMN_INDEX = 6; // G
 const HELP_LINES = [
   'HOW TO USE',
-  '• One row per deal (or deal + type)',
-  '• Type column: "Revenue" (closed/billed)',
-  '  or "Pipeline" (in progress)',
-  '• Amounts go under the month column',
-  '  when billed / expected',
-  '• Recurring? Same row, multiple months',
-  '• New month? Add a column to the right',
-  '  (e.g. "Aug 2026")',
+  '• One row per deal',
+  '• Fill EITHER Revenue (closed/billed)',
+  '  OR Pipeline (in progress), not both',
   '• Numbers only — no £ or commas',
-  '• Don\'t rename the tab or the Deal Name /',
-  '  Type / Notes column headers',
-  '• Pipeline closed? Change Type to Revenue',
+  '• Recurring? Add a new row for each',
+  '  month it gets billed',
+  '• Don\'t change headers or rename the tab',
+  '• New deals = new rows below',
 ];
-
-const FIXED_HEADERS = ['Deal Name', 'Type', 'Notes'];
 
 // --- env loading (.env.temp first, then process.env) ---
 function loadEnv() {
@@ -151,37 +139,25 @@ function colLetter(idx) {
   return s;
 }
 
-// Build the table for a client: union of period columns across all entries,
-// "Historical" first if used, then chronological-ish.
-function buildTable(entries) {
-  const periodSet = new Set();
-  for (const e of entries) for (const k of Object.keys(e.periods || {})) periodSet.add(k);
-  const periods = [];
-  if (periodSet.has('Historical')) {
-    periods.push('Historical');
-    periodSet.delete('Historical');
-  }
-  for (const p of Array.from(periodSet).sort()) periods.push(p);
-
-  const headerRow = [...FIXED_HEADERS, ...periods];
-  const dataRows = entries.map((e) => {
-    const row = [e.deal, e.type, e.notes || ''];
-    for (const p of periods) row.push(e.periods?.[p] !== undefined ? e.periods[p] : '');
-    return row;
-  });
-  return { headerRow, dataRows, periodCount: periods.length };
+function rowsForClient(name) {
+  const entries = ROI_BY_CLIENT[name] || [];
+  return entries.map((e) => [
+    e.month || '',
+    e.deal || '',
+    e.revenue !== undefined ? e.revenue : '',
+    e.pipeline !== undefined ? e.pipeline : '',
+    e.notes || '',
+  ]);
 }
 
 async function seed(client, token, dryRun) {
   const { name, sheetId } = client;
-  const entries = ROI_BY_CLIENT[name] || [];
-  const { headerRow, dataRows, periodCount } = buildTable(entries);
-
+  const dataRows = rowsForClient(name);
   console.log(`\n=== ${name} ===`);
   console.log(`   sheetId: ${sheetId}`);
-  console.log(`   ${entries.length} deals, ${periodCount} period columns`);
+  console.log(`   ${dataRows.length} data rows`);
   if (dryRun) {
-    console.log(`   headers: ${JSON.stringify(headerRow)}`);
+    console.log(`   headers: ${JSON.stringify(HEADERS)}`);
     for (const r of dataRows) console.log(`     ${JSON.stringify(r)}`);
     return;
   }
@@ -195,17 +171,14 @@ async function seed(client, token, dryRun) {
   // Create the new ROI tab.
   await batchUpdate(token, sheetId, [{ addSheet: { properties: { title: 'ROI' } } }]);
 
-  // Write the data table (headers + rows).
-  const tableValues = [headerRow, ...dataRows];
-  if (tableValues.length > 0) {
-    const lastCol = colLetter(headerRow.length - 1);
-    await writeRange(token, sheetId, `'ROI'!A1:${lastCol}${tableValues.length}`, tableValues);
-  }
+  // Write headers + data rows.
+  const tableValues = [HEADERS, ...dataRows];
+  const lastCol = colLetter(HEADERS.length - 1);
+  await writeRange(token, sheetId, `'ROI'!A1:${lastCol}${tableValues.length}`, tableValues);
 
-  // Write the help text far right, one line per row starting at row 1.
+  // Write the help block in column G, one line per row.
   const helpCol = colLetter(HELP_COLUMN_INDEX);
-  const helpValues = HELP_LINES.map((line) => [line]);
-  await writeRange(token, sheetId, `'ROI'!${helpCol}1:${helpCol}${HELP_LINES.length}`, helpValues);
+  await writeRange(token, sheetId, `'ROI'!${helpCol}1:${helpCol}${HELP_LINES.length}`, HELP_LINES.map((l) => [l]));
 
   console.log(`   ✓ rebuilt ROI tab (${tableValues.length} table rows + help block at col ${helpCol})`);
 }
@@ -222,7 +195,7 @@ async function main() {
     process.exit(1);
   }
   const clients = JSON.parse(groupRaw);
-  console.log(`${dryRun ? '[DRY RUN] ' : ''}Rebuilding ROI tab on ${clients.length} client sheets (wide format)`);
+  console.log(`${dryRun ? '[DRY RUN] ' : ''}Rebuilding ROI tab on ${clients.length} client sheets (long format)`);
 
   const token = dryRun ? null : await getAccessToken();
 
