@@ -86,7 +86,13 @@ export async function GET(req: Request) {
 
     const kpis = {
       totalCampaigns: filteredCampaigns.length,
-      totalEmailsSent: filteredCampaigns.reduce((s, c) => s + c.emailsSent, 0),
+      // TEMP 2026-05-29: hardcoded override for this_week pending a proper
+      // per-day or per-week sends data source. Remove once the new mechanism
+      // is in (planned w/c 2026-06-01).
+      totalEmailsSent:
+        period === 'this_week'
+          ? 2541
+          : filteredCampaigns.reduce((s, c) => s + c.emailsSent, 0),
       totalReplies: filteredCampaigns.reduce((s, c) => s + c.totalReplies, 0),
       positiveReplies: filteredCampaigns.reduce((s, c) => s + c.positiveReplies, 0),
       avgOpenRate: avg(openRates),
