@@ -20,6 +20,7 @@ export interface MeetingRecord {
   partnerStatus?: string;
   industry?: string;
   fleetSize?: number;
+  source?: string;
 }
 
 export interface LeadRecord {

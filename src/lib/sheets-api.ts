@@ -91,6 +91,7 @@ const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
   partnerStatus: ['partner status'],
   industry: ['industry'],
   fleetSize: ['fleet size', 'fleet'],
+  source: ['source', 'lead source', 'channel'],
 };
 
 const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -327,6 +328,7 @@ export async function fetchDashboardRawData(
       const shortStatus = getVal(row, mCols.shortStatus);
       const partnerStatus = getVal(row, mCols.partnerStatus);
       const industry = getVal(row, mCols.industry);
+      const source = getVal(row, mCols.source);
 
       // Fleet size — only parse when the sheet has the column; allow numeric strings
       // with commas (e.g. "1,200"). Blank / non-numeric cells are left undefined so
@@ -353,6 +355,7 @@ export async function fetchDashboardRawData(
         ...(partnerStatus !== undefined && mCols.partnerStatus !== undefined ? { partnerStatus } : {}),
         ...(mCols.industry !== undefined ? { industry } : {}),
         ...(fleetSize !== undefined ? { fleetSize } : {}),
+        ...(mCols.source !== undefined ? { source } : {}),
       });
     }
   }
