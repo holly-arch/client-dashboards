@@ -137,9 +137,12 @@ export function buildRoiSummary(
   rawOpportunities: RoiOpportunity[] = [],
 ): RoiSummary | undefined {
   if (!hasRoiTab) return undefined;
-  const revenueTotal = entries.reduce((s, e) => s + (e.revenue ?? 0), 0);
-  const pipelineTotal = entries.reduce((s, e) => s + (e.pipeline ?? 0), 0);
   const opportunities = computeOpportunities(rawOpportunities);
+  // Totals derived from the same opportunities[] array the per-client
+  // dashboards use, so the PTG group breakdown stays consistent with what
+  // each client's Revenue/Pipeline tables show.
+  const revenueTotal = opportunities.reduce((s, o) => s + o.totalContract, 0);
+  const pipelineTotal = opportunities.reduce((s, o) => s + (o.pipelineValue ?? 0), 0);
   return {
     entries,
     opportunities,
