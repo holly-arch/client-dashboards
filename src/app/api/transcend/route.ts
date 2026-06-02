@@ -56,6 +56,20 @@ function mondayOf(d: Date): Date {
   return out;
 }
 
+// Pre-tracking baseline: total emails sent across all campaigns launched
+// before the Number of Sends tab existed. Holly can't backdate per-week rows,
+// so we add this lump sum to any period whose range overlaps with the
+// pre-cutoff window. Snapshot taken 2026-05-29; cutoff is the Monday of the
+// first tracked week (2026-05-25).
+const HISTORICAL_BASELINE_EMAILS = 16184;
+const HISTORICAL_BASELINE_CUTOFF = new Date('2026-05-25T00:00:00');
+
+function shouldIncludeHistoricalBaseline(period: TimePeriod, range: { start: Date; end: Date } | null): boolean {
+  if (period === 'all_time') return true;
+  if (!range) return true;
+  return range.start < HISTORICAL_BASELINE_CUTOFF;
+}
+
 function sumSendsInPeriod(rows: SendsRow[], period: TimePeriod, range: { start: Date; end: Date } | null): number {
   if (period === 'this_week') {
     const monday = mondayOf(new Date()).getTime();
@@ -111,7 +125,9 @@ export async function GET(req: Request) {
 
     const kpis = {
       totalCampaigns: activeCampaigns.length,
-      totalEmailsSent: sumSendsInPeriod(sends, period, range),
+      totalEmailsSent:
+        sumSendsInPeriod(sends, period, range) +
+        (shouldIncludeHistoricalBaseline(period, range) ? HISTORICAL_BASELINE_EMAILS : 0),
       totalReplies: launchedInPeriod.reduce((s, c) => s + c.totalReplies, 0),
       positiveReplies: launchedInPeriod.reduce((s, c) => s + c.positiveReplies, 0),
       avgOpenRate: avg(openRates),
