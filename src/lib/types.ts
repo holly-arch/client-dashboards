@@ -69,6 +69,7 @@ export interface RoiOpportunity {
   contractValue?: number;
   monthly: { year: number; month: number; amount: number }[]; // month is 0-indexed
   notes?: string;
+  typeOfService?: string;
   // Derived (computed in buildRoiSummary):
   totalContract: number;
   billed: number;

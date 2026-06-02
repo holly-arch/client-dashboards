@@ -98,56 +98,37 @@ function buildDealNote(entries: RoiEntry[], field: 'revenue' | 'pipeline'): stri
   return rest > 0 ? `${shown.join(' + ')} and ${rest} more` : shown.join(' + ');
 }
 
-// Merge sheet rows that share an opportunity name (e.g. YTL appears as one
-// revenue row and one pipeline row — they roll up into a single opportunity
-// in the dashboard table). Then compute the billed / to-be-billed split using
-// today's month/year as the cutoff: anything in the current or earlier months
-// counts as billed.
-function mergeAndComputeOpportunities(rows: RoiOpportunity[]): RoiOpportunity[] {
+// One sheet row = one opportunity. Same-name rows stay distinct so a deal that
+// has both a Pipeline Value row and a Contract row (e.g. Trust Hire's YTL)
+// renders as two separate rows on the dashboard (one in Revenue, one in
+// Pipeline). Splits monthly amounts into billed (past + current month) and
+// to-be-billed (future months) using today's month/year as the cutoff.
+function computeOpportunities(rows: RoiOpportunity[]): RoiOpportunity[] {
   const now = new Date();
   const todayKey = now.getFullYear() * 12 + now.getMonth();
 
-  const byName = new Map<string, RoiOpportunity>();
-  for (const r of rows) {
-    const key = r.opportunity.trim();
-    const existing = byName.get(key);
-    if (existing) {
-      existing.pipelineValue = (existing.pipelineValue ?? 0) + (r.pipelineValue ?? 0) || undefined;
-      existing.contractValue = (existing.contractValue ?? 0) + (r.contractValue ?? 0) || undefined;
-      existing.monthly.push(...r.monthly);
-      if (r.notes && !existing.notes) existing.notes = r.notes;
-    } else {
-      byName.set(key, {
-        opportunity: r.opportunity,
-        pipelineValue: r.pipelineValue,
-        contractValue: r.contractValue,
-        monthly: [...r.monthly],
-        notes: r.notes,
-        totalContract: 0,
-        billed: 0,
-        toBeBilled: 0,
-      });
-    }
-  }
-
-  const merged: RoiOpportunity[] = [];
-  for (const o of byName.values()) {
-    const monthsSum = o.monthly.reduce((s, m) => s + m.amount, 0);
-    const pastSum = o.monthly
+  const computed = rows.map((r) => {
+    const monthsSum = r.monthly.reduce((s, m) => s + m.amount, 0);
+    const pastSum = r.monthly
       .filter((m) => m.year * 12 + m.month <= todayKey)
       .reduce((s, m) => s + m.amount, 0);
     const futureSum = monthsSum - pastSum;
-    o.totalContract = (o.contractValue ?? 0) + monthsSum;
-    // Contract Value with no monthly split = "already billed" (per plan decision).
-    o.billed = (o.contractValue ?? 0) + pastSum;
-    o.toBeBilled = futureSum;
-    merged.push(o);
-  }
-  // Sort biggest first — Pipeline-only deals still surface alongside contracted ones.
-  merged.sort((a, b) =>
+    // Total Contract = Contract Value column directly; fall back to sum of
+    // monthly amounts for legacy rows where the column hasn't been filled in.
+    const totalContract = r.contractValue !== undefined ? r.contractValue : monthsSum;
+    return {
+      ...r,
+      totalContract,
+      billed: pastSum,
+      toBeBilled: futureSum,
+    };
+  });
+
+  // Biggest deals first — pipeline-only rows still surface in the ordering.
+  computed.sort((a, b) =>
     (b.totalContract + (b.pipelineValue ?? 0)) - (a.totalContract + (a.pipelineValue ?? 0)),
   );
-  return merged;
+  return computed;
 }
 
 export function buildRoiSummary(
@@ -158,7 +139,7 @@ export function buildRoiSummary(
   if (!hasRoiTab) return undefined;
   const revenueTotal = entries.reduce((s, e) => s + (e.revenue ?? 0), 0);
   const pipelineTotal = entries.reduce((s, e) => s + (e.pipeline ?? 0), 0);
-  const opportunities = mergeAndComputeOpportunities(rawOpportunities);
+  const opportunities = computeOpportunities(rawOpportunities);
   return {
     entries,
     opportunities,

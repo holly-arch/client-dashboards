@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardData, TimePeriod } from '@/lib/types';
 import Header from './Header';
 import TimeFilter from './TimeFilter';
-import ROICard from './ROICard';
-import RoiTable from './RoiTable';
+import RevenueTable from './RevenueTable';
+import PipelineDealsTable from './PipelineDealsTable';
 import TouchpointsCard from './TouchpointsCard';
 import FleetSizeCard from './FleetSizeCard';
 import MetricCards from './MetricCards';
@@ -189,7 +189,17 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
-        {data.roi && <ROICard revenue={data.roi.revenue} pipeline={data.roi.pipeline} />}
+        {data.roi && (() => {
+          const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);
+          const pipelineRows = data.roi.opportunities.filter((o) => (o.pipelineValue ?? 0) > 0);
+          if (revenueRows.length === 0 && pipelineRows.length === 0) return null;
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              {revenueRows.length > 0 && <div className="lg:col-span-2"><RevenueTable opportunities={revenueRows} /></div>}
+              {pipelineRows.length > 0 && <div><PipelineDealsTable opportunities={pipelineRows} /></div>}
+            </div>
+          );
+        })()}
         {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
         {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
         <MetricCards metrics={data.metrics} />
@@ -202,8 +212,6 @@ export default function Dashboard() {
         {data.websiteInbounds && data.websiteInbounds.length > 0 && (
           <WebsiteInboundsSection inbounds={data.websiteInbounds} />
         )}
-
-        {data.roi && data.roi.opportunities.length > 0 && <RoiTable opportunities={data.roi.opportunities} />}
       </main>
 
       <Footer />

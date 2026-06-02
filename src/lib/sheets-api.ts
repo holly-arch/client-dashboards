@@ -482,9 +482,10 @@ export async function fetchDashboardRawData(
     const pipelineValueIdx = findIdx(['pipeline value', 'pipeline']);
     const contractValueIdx = findIdx(['contract value', 'contract', 'total value']);
     const notesIdx = findIdx(['notes', 'note', 'comment']);
+    const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
-      if (c === opportunityIdx || c === pipelineValueIdx || c === contractValueIdx || c === notesIdx) continue;
+      if (c === opportunityIdx || c === pipelineValueIdx || c === contractValueIdx || c === notesIdx || c === typeOfServiceIdx) continue;
       const parsed = parseMonthYearHeader(lowerHeaders[c]);
       if (parsed) monthCols.push({ idx: c, ...parsed });
     }
@@ -529,14 +530,15 @@ export async function fetchDashboardRawData(
       }
 
       // Derived fields (totalContract / billed / toBeBilled) are computed in
-      // buildRoiSummary after rows are merged by opportunity name. Initialise
-      // to zero here.
+      // buildRoiSummary. Initialise to zero here.
+      const typeOfService = typeOfServiceIdx >= 0 ? getVal(row, typeOfServiceIdx) : '';
       roiOpportunities.push({
         opportunity: deal,
         ...(pipelineAmount !== undefined && pipelineAmount > 0 ? { pipelineValue: pipelineAmount } : {}),
         ...(contractAmount !== undefined && contractAmount > 0 ? { contractValue: contractAmount } : {}),
         monthly,
         ...(notes ? { notes } : {}),
+        ...(typeOfService ? { typeOfService } : {}),
         totalContract: 0,
         billed: 0,
         toBeBilled: 0,
