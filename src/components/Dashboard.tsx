@@ -189,6 +189,8 @@ export default function Dashboard() {
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
+        {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+        {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
         <MetricCards metrics={data.metrics} />
         {data.roi && (() => {
           const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);
@@ -201,8 +203,6 @@ export default function Dashboard() {
             </div>
           );
         })()}
-        {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
-        {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <OutreachTable meetings={data.meetings} onRefresh={fetchData} clientName={clientName} />
