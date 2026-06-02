@@ -61,7 +61,7 @@ function mondayOf(d: Date): Date {
 // so we add this lump sum to any period whose range overlaps with the
 // pre-cutoff window. Snapshot taken 2026-05-29; cutoff is the Monday of the
 // first tracked week (2026-05-25).
-const HISTORICAL_BASELINE_EMAILS = 16184;
+const HISTORICAL_BASELINE_EMAILS = 20672;
 const HISTORICAL_BASELINE_CUTOFF = new Date('2026-05-25T00:00:00');
 
 function shouldIncludeHistoricalBaseline(period: TimePeriod, range: { start: Date; end: Date } | null): boolean {
