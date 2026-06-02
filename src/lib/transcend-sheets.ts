@@ -4,11 +4,13 @@ import {
   LeadReplyRecord,
   NegativeReplyRecord,
   NegativeReplyCategory,
+  SendsRow,
 } from './transcend-types';
 
 const CAMPAIGN_TAB = 'Campaign Performance';
 const LEADS_TAB = 'Lead Tracking';
 const NEG_TAB = 'Negative Replies';
+const SENDS_TAB = 'Number of Sends';
 
 // Column matchers — tolerant to small header variations
 const CAMPAIGN_COLS: Record<string, string[]> = {
@@ -26,6 +28,7 @@ const CAMPAIGN_COLS: Record<string, string[]> = {
   clickRate: ['click rate'],
   bounceRate: ['bounce rate'],
   notes: ['notes'],
+  status: ['status', 'campaign status', 'state'],
 };
 
 const LEAD_COLS: Record<string, string[]> = {
@@ -118,15 +121,17 @@ export async function fetchTranscendRawData(): Promise<{
   campaigns: CampaignRecord[];
   leads: LeadReplyRecord[];
   negativeReplies: NegativeReplyRecord[];
+  sends: SendsRow[];
 }> {
   const sheetId = process.env.GOOGLE_SHEET_ID;
   if (!sheetId) throw new Error('GOOGLE_SHEET_ID environment variable is not set');
 
-  // Negative Replies tab may not exist yet — fail silently.
-  const [campaignRows, leadRows, negRows] = await Promise.all([
+  // Negative Replies + Number of Sends tabs may not exist yet — fail silently.
+  const [campaignRows, leadRows, negRows, sendsRows] = await Promise.all([
     fetchSheet(sheetId, CAMPAIGN_TAB),
     fetchSheet(sheetId, LEADS_TAB),
     fetchSheet(sheetId, NEG_TAB).catch(() => [] as string[][]),
+    fetchSheet(sheetId, SENDS_TAB).catch(() => [] as string[][]),
   ]);
 
   // --- Campaigns ---
@@ -155,6 +160,7 @@ export async function fetchTranscendRawData(): Promise<{
         clickRate: parseRate(getVal(row, cols.clickRate)),
         bounceRate: parseRate(getVal(row, cols.bounceRate)),
         notes: getVal(row, cols.notes),
+        ...(cols.status !== undefined ? { status: getVal(row, cols.status) } : {}),
       });
     }
   }
@@ -220,6 +226,25 @@ export async function fetchTranscendRawData(): Promise<{
     }
   }
 
+  // --- Number of Sends ---
+  // Tab has Week | Sends | Total. We ignore Total (auto-derivable) and just
+  // parse Week (date of Monday) + Sends (integer).
+  const sends: SendsRow[] = [];
+  if (sendsRows.length > 1) {
+    const lowerHeaders = sendsRows[0].map((h) => (h || '').toLowerCase().trim());
+    const weekIdx = lowerHeaders.findIndex((h) => h === 'week' || h.includes('week'));
+    const sendsIdx = lowerHeaders.findIndex((h) => h === 'sends' || h === 'send' || h === 'no of sends' || h.includes('send'));
+    for (let i = 1; i < sendsRows.length; i++) {
+      const row = sendsRows[i];
+      const weekStr = weekIdx >= 0 ? (row[weekIdx] || '').trim() : '';
+      const week = parseDate(weekStr);
+      if (!week) continue;
+      const n = parseNumber(sendsIdx >= 0 ? (row[sendsIdx] || '') : '');
+      if (n === 0) continue;
+      sends.push({ week, sends: n });
+    }
+  }
+
   // Sort campaigns by launchDate descending
   campaigns.sort((a, b) => {
     const at = a.launchDate ? new Date(a.launchDate).getTime() : 0;
@@ -234,5 +259,5 @@ export async function fetchTranscendRawData(): Promise<{
     return bt - at;
   });
 
-  return { campaigns, leads, negativeReplies };
+  return { campaigns, leads, negativeReplies, sends };
 }

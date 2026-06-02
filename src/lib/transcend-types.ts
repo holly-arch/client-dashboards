@@ -18,6 +18,12 @@ export interface CampaignRecord {
   clickRate: number | null;
   bounceRate: number | null;
   notes: string;
+  status?: string;
+}
+
+export interface SendsRow {
+  week: string; // ISO date string of the Monday of the week
+  sends: number;
 }
 
 export interface LeadReplyRecord {

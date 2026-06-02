@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchTranscendRawData } from '@/lib/transcend-sheets';
-import { TranscendDashboardData, TimePeriod } from '@/lib/transcend-types';
+import { TranscendDashboardData, TimePeriod, SendsRow } from '@/lib/transcend-types';
 
 function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
   if (period === 'all_time') return null;
@@ -45,63 +45,82 @@ function avg(values: number[]): number | null {
   return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 
+// Returns the date of the Monday (UTC-stable) for the week containing the
+// given date. Used to match against the Number of Sends tab's Monday rows.
+function mondayOf(d: Date): Date {
+  const out = new Date(d);
+  out.setHours(0, 0, 0, 0);
+  const day = out.getDay(); // 0=Sun .. 6=Sat
+  const diff = day === 0 ? 6 : day - 1;
+  out.setDate(out.getDate() - diff);
+  return out;
+}
+
+function sumSendsInPeriod(rows: SendsRow[], period: TimePeriod, range: { start: Date; end: Date } | null): number {
+  if (period === 'this_week') {
+    const monday = mondayOf(new Date()).getTime();
+    return rows
+      .filter((r) => new Date(r.week).getTime() === monday)
+      .reduce((s, r) => s + r.sends, 0);
+  }
+  if (!range) {
+    // all_time
+    return rows.reduce((s, r) => s + r.sends, 0);
+  }
+  return rows
+    .filter((r) => {
+      const t = new Date(r.week).getTime();
+      return t >= range.start.getTime() && t <= range.end.getTime();
+    })
+    .reduce((s, r) => s + r.sends, 0);
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const period = (url.searchParams.get('period') as TimePeriod) || 'all_time';
     const endClient = url.searchParams.get('endClient') || '';
 
-    const { campaigns, leads, negativeReplies } = await fetchTranscendRawData();
+    const { campaigns, leads, negativeReplies, sends } = await fetchTranscendRawData();
+    const range = getDateRange(period);
 
     // Distinct end-clients for the dropdown — from campaigns, sorted alphabetically
     const endClients = [...new Set(campaigns.map((c) => c.clientName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-    // Filter campaigns by launch date (period) and end-client
-    const range = getDateRange(period);
-    let filteredCampaigns = campaigns.filter((c) => inRange(c.launchDate, range));
+    // Active Campaigns table — filtered by Status column (Active only), not by time.
+    let activeCampaigns = campaigns.filter((c) => (c.status || '').trim().toLowerCase() === 'active');
     if (endClient) {
-      filteredCampaigns = filteredCampaigns.filter((c) => c.clientName === endClient);
+      activeCampaigns = activeCampaigns.filter((c) => c.clientName === endClient);
     }
 
-    // Join leads & negative replies to campaigns by campaign name (and end-client if set)
-    const campaignNameSet = new Set(filteredCampaigns.map((c) => c.campaignName));
-    let filteredLeads = leads.filter((l) => campaignNameSet.has(l.campaignName));
-    let filteredNeg = negativeReplies;
+    // Campaigns launched in the selected period — only used for the time-driven KPIs
+    // (replies, positive replies, rates). NOT shown in the table.
+    let launchedInPeriod = campaigns.filter((c) => inRange(c.launchDate, range));
     if (endClient) {
-      filteredLeads = filteredLeads.filter((l) => l.clientName === endClient);
-      filteredNeg = filteredNeg.filter((n) => n.clientName === endClient);
+      launchedInPeriod = launchedInPeriod.filter((c) => c.clientName === endClient);
     }
-    // Negative Replies sheet doesn't have campaign name, so we filter by end-client only when set.
-    // When period filter narrows campaigns, we also narrow neg replies to those whose clientName has
-    // at least one campaign in the filtered set — avoids showing unrelated replies.
-    if (range) {
-      const clientsInRange = new Set(filteredCampaigns.map((c) => c.clientName));
-      filteredNeg = filteredNeg.filter((n) => clientsInRange.has(n.clientName));
-    }
+
+    // Lead Tracking + Negative Replies — show every row, only narrowed by end-client.
+    const filteredLeads = endClient ? leads.filter((l) => l.clientName === endClient) : leads;
+    const filteredNeg = endClient ? negativeReplies.filter((n) => n.clientName === endClient) : negativeReplies;
 
     // KPIs
-    const openRates = filteredCampaigns.map((c) => c.openRate).filter((r): r is number => r !== null);
-    const clickRates = filteredCampaigns.map((c) => c.clickRate).filter((r): r is number => r !== null);
-    const bounceRates = filteredCampaigns.map((c) => c.bounceRate).filter((r): r is number => r !== null);
+    const openRates = launchedInPeriod.map((c) => c.openRate).filter((r): r is number => r !== null);
+    const clickRates = launchedInPeriod.map((c) => c.clickRate).filter((r): r is number => r !== null);
+    const bounceRates = launchedInPeriod.map((c) => c.bounceRate).filter((r): r is number => r !== null);
 
     const kpis = {
-      totalCampaigns: filteredCampaigns.length,
-      // TEMP 2026-05-29: hardcoded override for this_week pending a proper
-      // per-day or per-week sends data source. Remove once the new mechanism
-      // is in (planned w/c 2026-06-01).
-      totalEmailsSent:
-        period === 'this_week'
-          ? 2541
-          : filteredCampaigns.reduce((s, c) => s + c.emailsSent, 0),
-      totalReplies: filteredCampaigns.reduce((s, c) => s + c.totalReplies, 0),
-      positiveReplies: filteredCampaigns.reduce((s, c) => s + c.positiveReplies, 0),
+      totalCampaigns: activeCampaigns.length,
+      totalEmailsSent: sumSendsInPeriod(sends, period, range),
+      totalReplies: launchedInPeriod.reduce((s, c) => s + c.totalReplies, 0),
+      positiveReplies: launchedInPeriod.reduce((s, c) => s + c.positiveReplies, 0),
       avgOpenRate: avg(openRates),
       avgClickRate: avg(clickRates),
       avgBounceRate: avg(bounceRates),
     };
 
     const data: TranscendDashboardData = {
-      campaigns: filteredCampaigns,
+      campaigns: activeCampaigns,
       leads: filteredLeads,
       negativeReplies: filteredNeg,
       endClients,
