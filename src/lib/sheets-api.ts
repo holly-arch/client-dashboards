@@ -46,7 +46,7 @@ async function getAccessToken(): Promise<string> {
 
 interface SheetCache { data: string[][]; expiry: number; }
 const sheetCache = new Map<string, SheetCache>();
-const CACHE_TTL = 60_000; // 60 seconds
+const CACHE_TTL = 300_000; // 5 minutes — keeps us safely under the shared Google Sheets 60-req/min/user quota across 25+ dashboards
 
 export async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]> {
   const cacheKey = `${sheetId}:${tabName}`;

@@ -14,7 +14,7 @@ import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
 import Footer from './Footer';
 
-const REFRESH_INTERVAL = 60_000;
+const REFRESH_INTERVAL = 90_000;
 
 // Quarter filter pills only render on the 6 PTG client dashboards (per Holly's request).
 const PTG_CLIENTS_WITH_QUARTERS = new Set([

@@ -8,7 +8,7 @@ import GroupRoiTable from './GroupRoiTable';
 import MetricCard from './MetricCard';
 import CampaignTable from './CampaignTable';
 
-const REFRESH_INTERVAL = 60_000;
+const REFRESH_INTERVAL = 90_000;
 const BRAND = '#ff2eeb';
 
 interface ClientData {

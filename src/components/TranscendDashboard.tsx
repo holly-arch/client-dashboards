@@ -11,7 +11,7 @@ import CampaignPerformanceTable from './CampaignPerformanceTable';
 import EmailLeadsTable from './EmailLeadsTable';
 import NegativeRepliesTable from './NegativeRepliesTable';
 
-const REFRESH_INTERVAL = 60_000;
+const REFRESH_INTERVAL = 90_000;
 
 function PasswordGate({ onAuth }: { onAuth: () => void }) {
   const [password, setPassword] = useState('');
