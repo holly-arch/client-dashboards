@@ -20,8 +20,9 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
   const hasFleetSize = meetings.some((m) => m.fleetSize !== undefined);
   // Source column auto-detection picked up Lytx / Coral Vision / myBasePay
   // sheets that happen to have a "Source" / "Lead Source" / "Channel" header
-  // even though Holly only asked for it on Tower Supplies. Gate by client name.
-  const hasSource = clientName === 'Tower Supplies' && meetings.some((m) => m.source !== undefined);
+  // unintentionally. Gate by explicit client name list.
+  const SOURCE_CLIENTS = new Set(['Tower Supplies', 'Wire']);
+  const hasSource = SOURCE_CLIENTS.has(clientName ?? '') && meetings.some((m) => m.source !== undefined);
   const showMeetingDate = clientName === 'Jua' || clientName === 'Tower Supplies';
 
   return (
