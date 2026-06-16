@@ -20,7 +20,12 @@ export async function GET(request: Request) {
     }
 
     let raw = await fetchDashboardRawData();
-    if (process.env.CLIENT_NAME === 'Demo') raw = shiftDatesToToday(raw);
+    // Rolling demo dates — opt-in either via CLIENT_NAME=Demo (legacy) or the
+    // explicit IS_DEMO=true env var (so the displayed clientName can be a
+    // fake brand like "Acme Corp" while still keeping the dates fresh).
+    if (process.env.CLIENT_NAME === 'Demo' || process.env.IS_DEMO === 'true') {
+      raw = shiftDatesToToday(raw);
+    }
     const data = buildDashboardData(
       raw.meetings,
       raw.leads,
