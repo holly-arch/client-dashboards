@@ -583,7 +583,10 @@ export function shiftDatesToToday(raw: {
 
   const latest = Math.max(...candidates);
   const today = new Date();
-  today.setHours(23, 59, 59, 999);
+  // Anchor to noon today, not end-of-day. End-of-day in UTC (23:59:59) flips
+  // to "tomorrow" when rendered in any timezone east of UTC (e.g. BST), so
+  // dashboard viewers in the UK would see the latest date as tomorrow's.
+  today.setHours(12, 0, 0, 0);
 
   const deltaMs = today.getTime() - latest;
   if (Math.abs(deltaMs) < 24 * 60 * 60 * 1000) return raw;
