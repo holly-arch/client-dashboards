@@ -57,10 +57,14 @@ function num(value: string | undefined): number {
 async function runReport(args: Record<string, unknown>): Promise<GaReportResponse> {
   const composio = client();
   // The Composio SDK returns { successful, data, error } — unwrap to the raw GA response.
+  // Composio's manual execute() rejects `version: 'latest'` unless dangerouslySkipVersionCheck
+  // is true (their guard against silently picking up breaking toolkit changes). The response
+  // shape we parse is Google's GA4 Data API, not Composio's wrapper schema, so the skip is
+  // genuinely safe here — we'd be insulated even if Composio re-released the toolkit.
   const result = (await composio.tools.execute('GOOGLE_ANALYTICS_RUN_REPORT', {
     userId: COMPOSIO_USER_ID,
     arguments: args,
-    version: 'latest',
+    dangerouslySkipVersionCheck: true,
   })) as { successful?: boolean; data?: GaReportResponse; error?: string | null };
   if (result?.successful === false) {
     throw new Error(`GA RunReport failed: ${result.error ?? 'unknown error'}`);
