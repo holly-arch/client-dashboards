@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import CountryMapCard from './CountryMapCard';
 
 type Range = '7d' | '30d' | '90d';
 
 interface AnalyticsRow {
   label: string;
   sessions: number;
+}
+
+interface CountryRow {
+  name: string;
+  activeUsers: number;
 }
 
 interface AnalyticsData {
@@ -18,6 +24,7 @@ interface AnalyticsData {
   };
   topPages: AnalyticsRow[];
   topSources: AnalyticsRow[];
+  countries: CountryRow[];
   range: Range;
 }
 
@@ -172,6 +179,8 @@ export default function GoogleAnalyticsCard() {
             <RankedTable title="TOP PAGES" rows={data.topPages} labelHeader="Page" />
             <RankedTable title="TOP SOURCES" rows={data.topSources} labelHeader="Source" />
           </div>
+
+          <CountryMapCard countries={data.countries} />
         </>
       )}
     </section>

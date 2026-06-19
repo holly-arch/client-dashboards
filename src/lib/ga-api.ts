@@ -26,10 +26,16 @@ export interface AnalyticsRow {
   sessions: number;
 }
 
+export interface CountryRow {
+  name: string;
+  activeUsers: number;
+}
+
 export interface AnalyticsData {
   kpis: AnalyticsKpis;
   topPages: AnalyticsRow[];
   topSources: AnalyticsRow[];
+  countries: CountryRow[];
   range: GaDateRange;
 }
 
@@ -78,7 +84,7 @@ export async function fetchAnalytics(range: GaDateRange = '30d'): Promise<Analyt
   const property = `properties/${propertyId}`;
   const dateRanges = [{ startDate: startDate(range), endDate: 'today' }];
 
-  const [kpiReport, pagesReport, sourcesReport] = await Promise.all([
+  const [kpiReport, pagesReport, sourcesReport, countriesReport] = await Promise.all([
     runReport({
       property,
       dateRanges,
@@ -105,6 +111,14 @@ export async function fetchAnalytics(range: GaDateRange = '30d'): Promise<Analyt
       limit: 10,
       orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
     }),
+    runReport({
+      property,
+      dateRanges,
+      dimensions: [{ name: 'country' }],
+      metrics: [{ name: 'activeUsers' }],
+      limit: 250,
+      orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+    }),
   ]);
 
   const kpiRow = kpiReport.rows?.[0];
@@ -126,5 +140,12 @@ export async function fetchAnalytics(range: GaDateRange = '30d'): Promise<Analyt
     sessions: num(r.metricValues?.[0]?.value),
   }));
 
-  return { kpis, topPages, topSources, range };
+  const countries: CountryRow[] = (countriesReport.rows ?? [])
+    .map((r) => ({
+      name: r.dimensionValues?.[0]?.value ?? '',
+      activeUsers: num(r.metricValues?.[0]?.value),
+    }))
+    .filter((c) => c.name && c.name !== '(not set)');
+
+  return { kpis, topPages, topSources, countries, range };
 }
