@@ -60,6 +60,7 @@ async function runReport(args: Record<string, unknown>): Promise<GaReportRespons
   const result = (await composio.tools.execute('GOOGLE_ANALYTICS_RUN_REPORT', {
     userId: COMPOSIO_USER_ID,
     arguments: args,
+    version: 'latest',
   })) as { successful?: boolean; data?: GaReportResponse; error?: string | null };
   if (result?.successful === false) {
     throw new Error(`GA RunReport failed: ${result.error ?? 'unknown error'}`);
