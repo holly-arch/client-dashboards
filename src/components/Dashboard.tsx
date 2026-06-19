@@ -12,6 +12,7 @@ import MetricCards from './MetricCards';
 import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
+import GoogleAnalyticsCard from './GoogleAnalyticsCard';
 import Footer from './Footer';
 
 const REFRESH_INTERVAL = 90_000;
@@ -212,6 +213,8 @@ export default function Dashboard() {
         {data.websiteInbounds && data.websiteInbounds.length > 0 && (
           <WebsiteInboundsSection inbounds={data.websiteInbounds} />
         )}
+
+        {clientName === 'myBasePay' && <GoogleAnalyticsCard />}
       </main>
 
       <Footer />
