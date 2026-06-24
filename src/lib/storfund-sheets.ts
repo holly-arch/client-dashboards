@@ -109,9 +109,44 @@ function parseContent(rows: string[][]): ContentRow[] {
   return out;
 }
 
+const MONTH_NAME_IDX: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+};
+
+// Parses Storfund's "Month X (June)" date label → ISO date string anchored
+// to the 15th of that month in the current calendar year. Empty / unparseable
+// labels return '' so the row passes the "All Time" filter but is hidden by
+// time-bound pills (this_week / this_month / etc.) — same convention as
+// real meeting rows with no date.
+function parseMonthLabel(label: string): string {
+  if (!label) return '';
+  const m = label.match(/\(([a-z]+)\)/i);
+  if (!m) return '';
+  const monthIdx = MONTH_NAME_IDX[m[1].toLowerCase().slice(0, 3)];
+  if (monthIdx === undefined) return '';
+  const year = new Date().getFullYear();
+  // Use UTC noon to dodge any timezone edge-cases when isInRange compares.
+  return new Date(Date.UTC(year, monthIdx, 15, 12, 0, 0)).toISOString();
+}
+
+// Two shapes supported:
+//   (a) Brief schema: date | asset | type | status | link  (Gareth's planned schema)
+//   (b) Storfund's existing Content Tracker:
+//         Date: | <asset title col, usually month> | Approval | Document/Link |
+//         Updated Document | Comments
+//       In (b), Type is encoded as in-table section header rows (rows where
+//       col A is empty and col B holds the type word — Guide, Video, Photo,
+//       etc.). We track the most-recently-seen type and apply it to the
+//       asset rows that follow until the next type-header row.
 function parseAssets(rows: string[][]): AssetRow[] {
   if (rows.length < 2) return [];
   const headers = rows[0];
+  const lowerHeaders = headers.map((h) => (h || '').toLowerCase().replace(/[:]/g, '').trim());
+
+  const isContentTracker = lowerHeaders.includes('document/link') || lowerHeaders.includes('updated document');
+  if (isContentTracker) return parseAssetsContentTracker(rows, lowerHeaders);
+
   const idx = {
     date: findIdx(headers, ['date', 'created']),
     asset: findIdx(headers, ['asset', 'name', 'title']),
@@ -130,6 +165,38 @@ function parseAssets(rows: string[][]): AssetRow[] {
       type: getCell(r, idx.type),
       status: getCell(r, idx.status),
       link: getCell(r, idx.link),
+    });
+  }
+  return out;
+}
+
+function parseAssetsContentTracker(rows: string[][], lowerHeaders: string[]): AssetRow[] {
+  const monthLabelIdx = 0; // Column A holds the "Month X (June)" label
+  const assetIdx = 1;      // Column B is asset title (and type-header row text)
+  const statusIdx = lowerHeaders.indexOf('approval');
+  const primaryLinkIdx = lowerHeaders.indexOf('document/link');
+  const updatedLinkIdx = lowerHeaders.indexOf('updated document');
+
+  const out: AssetRow[] = [];
+  let currentType = 'Other';
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const col2 = getCell(r, assetIdx);
+    if (!col2) continue;
+    const monthLabel = getCell(r, monthLabelIdx);
+    // Type-header row: column A empty, column B holds the type.
+    if (!monthLabel) {
+      currentType = col2;
+      continue;
+    }
+    const primary = getCell(r, primaryLinkIdx);
+    const updated = getCell(r, updatedLinkIdx);
+    out.push({
+      date: parseMonthLabel(monthLabel),
+      asset: col2,
+      type: currentType,
+      status: getCell(r, statusIdx),
+      link: updated || primary,
     });
   }
   return out;
