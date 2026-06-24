@@ -1,4 +1,4 @@
-import { fetchSheet, parseDate } from './sheets-api';
+import { fetchSheet, fetchSheetWithColor, parseDate, SheetCellMeta } from './sheets-api';
 import { getDateRange, isInRange } from './utils';
 import { TimePeriod } from './types';
 import {
@@ -53,6 +53,32 @@ async function safeFetchSheet(sheetId: string, tab: string): Promise<string[][]>
   } catch {
     return [];
   }
+}
+
+async function safeFetchSheetWithColor(sheetId: string, tab: string): Promise<SheetCellMeta[][]> {
+  try {
+    return await fetchSheetWithColor(sheetId, tab);
+  } catch {
+    return [];
+  }
+}
+
+// Classify a cell's background colour into one of Storfund's known approval
+// statuses. Returns '' for blank/white/uncategorised fills so the StatusPill
+// renders as an em-dash rather than a misleading pill. The thresholds are
+// loose so any reasonable shade of green / orange / yellow gets caught.
+function classifyApprovalColour(bg?: { r: number; g: number; b: number }): string {
+  if (!bg) return '';
+  const { r, g, b } = bg;
+  // Skip near-white / unfilled cells.
+  if (r > 0.95 && g > 0.95 && b > 0.95) return '';
+  // Skip near-black / dark cells too (probably theme inversion, not a status).
+  if (r < 0.1 && g < 0.1 && b < 0.1) return '';
+  // Clearly green-dominant → Approved.
+  if (g > r + 0.02 && g > b + 0.02) return 'Approved';
+  // Orange / yellow (red high, blue lower) → Awaiting feedback.
+  if (r > 0.85 && b < 0.85 && r >= g - 0.02) return 'Awaiting feedback';
+  return '';
 }
 
 function parseWorkstreams(rows: string[][]): WorkstreamRow[] {
@@ -139,13 +165,13 @@ function parseMonthLabel(label: string): string {
 //       col A is empty and col B holds the type word — Guide, Video, Photo,
 //       etc.). We track the most-recently-seen type and apply it to the
 //       asset rows that follow until the next type-header row.
-function parseAssets(rows: string[][]): AssetRow[] {
+function parseAssets(rows: string[][], meta?: SheetCellMeta[][]): AssetRow[] {
   if (rows.length < 2) return [];
   const headers = rows[0];
   const lowerHeaders = headers.map((h) => (h || '').toLowerCase().replace(/[:]/g, '').trim());
 
   const isContentTracker = lowerHeaders.includes('document/link') || lowerHeaders.includes('updated document');
-  if (isContentTracker) return parseAssetsContentTracker(rows, lowerHeaders);
+  if (isContentTracker) return parseAssetsContentTracker(rows, lowerHeaders, meta);
 
   const idx = {
     date: findIdx(headers, ['date', 'created']),
@@ -170,7 +196,7 @@ function parseAssets(rows: string[][]): AssetRow[] {
   return out;
 }
 
-function parseAssetsContentTracker(rows: string[][], lowerHeaders: string[]): AssetRow[] {
+function parseAssetsContentTracker(rows: string[][], lowerHeaders: string[], meta?: SheetCellMeta[][]): AssetRow[] {
   const monthLabelIdx = 0; // Column A holds the "Month X (June)" label
   const assetIdx = 1;      // Column B is asset title (and type-header row text)
   const statusIdx = lowerHeaders.indexOf('approval');
@@ -184,18 +210,22 @@ function parseAssetsContentTracker(rows: string[][], lowerHeaders: string[]): As
     const col2 = getCell(r, assetIdx);
     if (!col2) continue;
     const monthLabel = getCell(r, monthLabelIdx);
-    // Type-header row: column A empty, column B holds the type.
     if (!monthLabel) {
       currentType = col2;
       continue;
     }
     const primary = getCell(r, primaryLinkIdx);
     const updated = getCell(r, updatedLinkIdx);
+    // Approval status comes either from cell text (rare) or, more often,
+    // from the cell's background colour (green = Approved, orange = Awaiting).
+    const statusText = getCell(r, statusIdx);
+    const statusBg = meta?.[i]?.[statusIdx]?.bg;
+    const status = statusText || classifyApprovalColour(statusBg);
     out.push({
       date: parseMonthLabel(monthLabel),
       asset: col2,
       type: currentType,
-      status: getCell(r, statusIdx),
+      status,
       link: updated || primary,
     });
   }
@@ -324,19 +354,24 @@ export async function fetchStorfundData(period: TimePeriod): Promise<StorfundV2D
   const sheetId = process.env.STORFUND_DATA_SHEET_ID;
   if (!sheetId) throw new Error('STORFUND_DATA_SHEET_ID is not set');
 
-  const [workRows, contentRows, assetRows, outreachRows, dataRows, timelineRows, socialRows] = await Promise.all([
+  const [workRows, contentRows, assetMeta, outreachRows, dataRows, timelineRows, socialRows] = await Promise.all([
     safeFetchSheet(sheetId, TAB_WORKSTREAMS),
     safeFetchSheet(sheetId, TAB_CONTENT),
-    safeFetchSheet(sheetId, TAB_ASSETS),
+    // Assets need colour metadata (Approval column is colour-coded, not text).
+    safeFetchSheetWithColor(sheetId, TAB_ASSETS),
     safeFetchSheet(sheetId, TAB_OUTREACH),
     safeFetchSheet(sheetId, TAB_DATA),
     safeFetchSheet(sheetId, TAB_TIMELINE),
     safeFetchSheet(sheetId, TAB_SOCIAL),
   ]);
 
+  // Flatten the colour-aware Assets fetch into plain row strings for the parser,
+  // then pass the meta separately so the Content Tracker branch can read fills.
+  const assetRows: string[][] = assetMeta.map((row) => row.map((cell) => cell.v));
+
   const workstreams = parseWorkstreams(workRows);
   const allContent = parseContent(contentRows);
-  const allAssets = parseAssets(assetRows);
+  const allAssets = parseAssets(assetRows, assetMeta);
   const allOutreach = parseOutreach(outreachRows);
   const dataMetrics = parseDataMetrics(dataRows);
   const allTimeline = parseTimeline(timelineRows);

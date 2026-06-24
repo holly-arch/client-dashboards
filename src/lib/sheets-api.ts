@@ -75,6 +75,61 @@ export async function fetchSheet(sheetId: string, tabName: string): Promise<stri
   return rows;
 }
 
+// --- Sheet fetch with background colour metadata ---
+// Used when a sheet encodes state in cell fill (e.g. Storfund's Assets tab
+// where Approval status is colour-coded green/orange rather than text).
+
+export interface SheetCellMeta {
+  v: string;
+  bg?: { r: number; g: number; b: number };
+}
+
+interface SheetMetaCache { data: SheetCellMeta[][]; expiry: number; }
+const sheetMetaCache = new Map<string, SheetMetaCache>();
+
+interface GoogleSheetsCellResponse {
+  formattedValue?: string;
+  effectiveFormat?: { backgroundColor?: { red?: number; green?: number; blue?: number } };
+}
+interface GoogleSheetsRowResponse { values?: GoogleSheetsCellResponse[] }
+interface GoogleSheetsDataResponse { rowData?: GoogleSheetsRowResponse[] }
+interface GoogleSheetsSheetResponse { data?: GoogleSheetsDataResponse[] }
+interface GoogleSheetsSpreadsheetResponse { sheets?: GoogleSheetsSheetResponse[] }
+
+export async function fetchSheetWithColor(sheetId: string, tabName: string): Promise<SheetCellMeta[][]> {
+  const cacheKey = `${sheetId}:${tabName}:meta`;
+  const cached = sheetMetaCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiry) return cached.data;
+
+  const token = await getAccessToken();
+  const quotedTab = `'${tabName}'`;
+  const params = new URLSearchParams();
+  params.append('ranges', quotedTab);
+  params.append('fields', 'sheets.data.rowData.values(formattedValue,effectiveFormat.backgroundColor)');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?${params.toString()}`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`Google Sheets meta error ${res.status} for tab "${tabName}": ${await res.text()}`);
+
+  const json = (await res.json()) as GoogleSheetsSpreadsheetResponse;
+  const rowData = json?.sheets?.[0]?.data?.[0]?.rowData ?? [];
+  const out: SheetCellMeta[][] = rowData.map((row) => {
+    const vals = row.values ?? [];
+    return vals.map((cell): SheetCellMeta => {
+      const v = cell?.formattedValue ?? '';
+      const bg = cell?.effectiveFormat?.backgroundColor;
+      if (!bg) return { v };
+      return { v, bg: { r: bg.red ?? 0, g: bg.green ?? 0, b: bg.blue ?? 0 } };
+    });
+  });
+
+  sheetMetaCache.set(cacheKey, { data: out, expiry: Date.now() + CACHE_TTL });
+  return out;
+}
+
 // --- Column Auto-Detection ---
 
 const MEETING_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -480,12 +535,15 @@ export async function fetchDashboardRawData(
       lowerHeaders.findIndex((h) => candidates.some((c) => h === c));
     const opportunityIdx = findIdx(['opportunity', 'deal name', 'deal', 'company', 'client']);
     const pipelineValueIdx = findIdx(['pipeline value', 'pipeline']);
-    const contractValueIdx = findIdx(['contract value', 'contract', 'total value']);
+    // 'contract value' / 'contract' kept on the annual matcher so unmigrated sheets
+    // (where the old "Contract Value" column held the annual figure) still parse.
+    const annualContractValueIdx = findIdx(['annual contract value', 'annual contract', 'contract value annual', 'contract value', 'contract']);
+    const totalContractValueIdx = findIdx(['total contract value', 'total contract', 'lifetime contract value', 'total value']);
     const notesIdx = findIdx(['notes', 'note', 'comment']);
     const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
-      if (c === opportunityIdx || c === pipelineValueIdx || c === contractValueIdx || c === notesIdx || c === typeOfServiceIdx) continue;
+      if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx) continue;
       const parsed = parseMonthYearHeader(lowerHeaders[c]);
       if (parsed) monthCols.push({ idx: c, ...parsed });
     }
@@ -496,7 +554,8 @@ export async function fetchDashboardRawData(
       if (!deal) continue;
 
       const pipelineAmount = parseCurrency(getVal(row, pipelineValueIdx));
-      const contractAmount = parseCurrency(getVal(row, contractValueIdx));
+      const annualContractAmount = parseCurrency(getVal(row, annualContractValueIdx));
+      const totalContractAmount = parseCurrency(getVal(row, totalContractValueIdx));
       const monthly: { year: number; month: number; amount: number }[] = [];
       let monthsTotal = 0;
       for (const { idx, year, month } of monthCols) {
@@ -506,7 +565,7 @@ export async function fetchDashboardRawData(
           monthsTotal += n;
         }
       }
-      const revenueTotal = monthsTotal + (contractAmount ?? 0);
+      const revenueTotal = monthsTotal + (totalContractAmount ?? annualContractAmount ?? 0);
       const notes = notesIdx >= 0 ? getVal(row, notesIdx) : '';
 
       // Skip rows that have no signal at all.
@@ -530,12 +589,13 @@ export async function fetchDashboardRawData(
       }
 
       // Derived fields (totalContract / billed / toBeBilled) are computed in
-      // buildRoiSummary. Initialise to zero here.
+      // computeOpportunities. Initialise to zero here.
       const typeOfService = typeOfServiceIdx >= 0 ? getVal(row, typeOfServiceIdx) : '';
       roiOpportunities.push({
         opportunity: deal,
         ...(pipelineAmount !== undefined && pipelineAmount > 0 ? { pipelineValue: pipelineAmount } : {}),
-        ...(contractAmount !== undefined && contractAmount > 0 ? { contractValue: contractAmount } : {}),
+        ...(annualContractAmount !== undefined && annualContractAmount > 0 ? { annualContractValue: annualContractAmount } : {}),
+        ...(totalContractAmount !== undefined && totalContractAmount > 0 ? { totalContractValue: totalContractAmount } : {}),
         monthly,
         ...(notes ? { notes } : {}),
         ...(typeOfService ? { typeOfService } : {}),
