@@ -66,19 +66,28 @@ export interface RoiEntry {
 export interface RoiOpportunity {
   opportunity: string;
   pipelineValue?: number;
-  contractValue?: number;
+  annualContractValue?: number;
+  totalContractValue?: number; // Lifetime value over the full contract duration
   monthly: { year: number; month: number; amount: number }[]; // month is 0-indexed
   notes?: string;
   typeOfService?: string;
-  // Derived (computed in buildRoiSummary):
-  totalContract: number;
-  billed: number;
-  toBeBilled: number;
+  // Derived (computed in computeOpportunities):
+  totalContract: number;       // Prefers totalContractValue, falls back to annualContractValue, then to sum of monthly
+  billed: number;              // Period-filtered: monthly cells in range AND <= today
+  toBeBilled: number;          // Period-filtered: monthly cells in range AND > today
+}
+
+export interface RoiTotals {
+  annual12moContract: number;  // Sum of annualContractValue across all opportunities
+  totalContractValue: number;  // Sum of totalContractValue (falls back to annualContractValue per row)
+  totalBilled: number;         // Sum of billed (period-filtered)
+  totalPipeline: number;       // Sum of pipelineValue
 }
 
 export interface RoiSummary {
   entries: RoiEntry[];
   opportunities: RoiOpportunity[];
+  totals: RoiTotals;
   revenueTotal: number;
   pipelineTotal: number;
   revenue: string;

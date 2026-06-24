@@ -7,6 +7,8 @@ import TimeFilter from './TimeFilter';
 import GroupRoiTable from './GroupRoiTable';
 import MetricCard from './MetricCard';
 import CampaignTable from './CampaignTable';
+import DashboardTabs, { DashboardTab } from './DashboardTabs';
+import RoiTotalsCards from './RoiTotalsCards';
 
 const REFRESH_INTERVAL = 90_000;
 const BRAND = '#ff2eeb';
@@ -87,6 +89,7 @@ export default function GroupDashboard() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [data, setData] = useState<GroupData | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('all_time');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('campaign');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Group');
@@ -182,73 +185,85 @@ export default function GroupDashboard() {
 
       <main className="flex-1 px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>GROUP OVERVIEW</h2>
-            <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{clientName}</h1>
-            <p className="text-sm mt-1" style={{ color: '#666' }}>
-              Aggregated performance across {activeClients.length} campaigns • {period === 'all_time' ? 'All time data' : period.replace('_', ' ')}
-            </p>
+          <div className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>GROUP OVERVIEW</h2>
+              <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{clientName}</h1>
+              <p className="text-sm mt-1" style={{ color: '#666' }}>
+                Aggregated performance across {activeClients.length} campaigns • {period === 'all_time' ? 'All time data' : period.replace('_', ' ')}
+              </p>
+            </div>
+            {hasAnyRoi && <DashboardTabs selected={activeTab} onChange={setActiveTab} />}
           </div>
           <TimeFilter selected={period} onChange={setPeriod} quarters={data.aggregate.availableQuarters} />
         </div>
 
-        {hasAnyRoi && <GroupRoiTable clients={data.clients} />}
+        {activeTab === 'campaign' && (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+              <MetricCard
+                title="Total Meetings Booked"
+                value={m.meetingsBooked}
+                subtitle={`${m.meetingsCancelled} cancelled across group`}
+                borderColorHex={BRAND}
+                icon={
+                  <svg className="w-5 h-5" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                  </svg>
+                }
+              />
+              <MetricCard
+                title="Total Meetings Sat*"
+                value={m.meetingsSat}
+                subtitle={`Includes 80% of ${m.upcoming} upcoming`}
+                borderColorHex="#22c55e"
+                icon={
+                  <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                }
+              />
+              <MetricCard
+                title="Upcoming Meetings"
+                value={m.upcoming}
+                subtitle={`${m.awaitingReschedule} awaiting reschedule`}
+                borderColorHex="#06b6d4"
+                icon={
+                  <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                }
+              />
+              <MetricCard
+                title="Total Leads Generated"
+                value={m.leadsGenerated}
+                subtitle={`${m.leadsConvertedToMeetings} converted to meetings`}
+                borderColorHex={BRAND}
+                icon={
+                  <svg className="w-5 h-5" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                  </svg>
+                }
+              />
+            </div>
+            <p className="text-xs" style={{ color: '#555' }}>
+              *Meetings Sat includes confirmed attendances plus 80% of upcoming meetings based on historical attendance rates.
+            </p>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-          <MetricCard
-            title="Total Meetings Booked"
-            value={m.meetingsBooked}
-            subtitle={`${m.meetingsCancelled} cancelled across group`}
-            borderColorHex={BRAND}
-            icon={
-              <svg className="w-5 h-5" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <path d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            }
-          />
-          <MetricCard
-            title="Total Meetings Sat*"
-            value={m.meetingsSat}
-            subtitle={`Includes 80% of ${m.upcoming} upcoming`}
-            borderColorHex="#22c55e"
-            icon={
-              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            }
-          />
-          <MetricCard
-            title="Upcoming Meetings"
-            value={m.upcoming}
-            subtitle={`${m.awaitingReschedule} awaiting reschedule`}
-            borderColorHex="#06b6d4"
-            icon={
-              <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-            }
-          />
-          <MetricCard
-            title="Total Leads Generated"
-            value={m.leadsGenerated}
-            subtitle={`${m.leadsConvertedToMeetings} converted to meetings`}
-            borderColorHex={BRAND}
-            icon={
-              <svg className="w-5 h-5" style={{ color: BRAND }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            }
-          />
-        </div>
-        <p className="text-xs" style={{ color: '#555' }}>
-          *Meetings Sat includes confirmed attendances plus 80% of upcoming meetings based on historical attendance rates.
-        </p>
+            <CampaignTable clients={activeClients} />
+          </>
+        )}
 
-        <CampaignTable clients={activeClients} />
+        {activeTab === 'roi' && data.aggregate.roi && (
+          <>
+            <RoiTotalsCards totals={data.aggregate.roi.totals} />
+            <GroupRoiTable clients={data.clients} />
+          </>
+        )}
       </main>
 
       <footer className="flex flex-col sm:flex-row items-center justify-between gap-1 px-4 md:px-6 py-4 text-xs mt-auto" style={{ borderTop: '1px solid #1e1e1e', color: '#555' }}>

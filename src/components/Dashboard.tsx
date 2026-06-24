@@ -14,6 +14,8 @@ import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
 import WarmLeadsSection from './WarmLeadsSection';
 import GoogleAnalyticsCard from './GoogleAnalyticsCard';
+import DashboardTabs, { DashboardTab } from './DashboardTabs';
+import RoiTotalsCards from './RoiTotalsCards';
 import Footer from './Footer';
 
 const REFRESH_INTERVAL = 90_000;
@@ -92,6 +94,7 @@ export default function Dashboard() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [period, setPeriod] = useState<TimePeriod>('all_time');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('campaign');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Client');
@@ -184,42 +187,54 @@ export default function Dashboard() {
 
       <main className="flex-1 px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
-            <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>Campaign Dashboard</h1>
+          <div className="flex flex-col gap-3">
+            <div>
+              <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
+              <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{activeTab === 'roi' ? 'ROI Dashboard' : 'Campaign Dashboard'}</h1>
+            </div>
+            {data.roi && <DashboardTabs selected={activeTab} onChange={setActiveTab} />}
           </div>
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
 
-        {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
-        {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
-        <MetricCards metrics={data.metrics} />
-        {data.roi && (() => {
+        {activeTab === 'campaign' && (
+          <>
+            {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+            {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
+            <MetricCards metrics={data.metrics} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+              <OutreachTable meetings={data.meetings} onRefresh={fetchData} clientName={clientName} />
+              <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} />
+            </div>
+
+            {data.websiteInbounds && data.websiteInbounds.length > 0 && (
+              <WebsiteInboundsSection inbounds={data.websiteInbounds} />
+            )}
+
+            {data.warmLeads && data.warmLeads.length > 0 && (
+              <WarmLeadsSection warmLeads={data.warmLeads} />
+            )}
+
+            {clientName === 'myBasePay' && <GoogleAnalyticsCard />}
+          </>
+        )}
+
+        {activeTab === 'roi' && data.roi && (() => {
           const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);
           const pipelineRows = data.roi.opportunities.filter((o) => (o.pipelineValue ?? 0) > 0);
-          if (revenueRows.length === 0 && pipelineRows.length === 0) return null;
           return (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-              {revenueRows.length > 0 && <div className="lg:col-span-2"><RevenueTable opportunities={revenueRows} /></div>}
-              {pipelineRows.length > 0 && <div><PipelineDealsTable opportunities={pipelineRows} /></div>}
-            </div>
+            <>
+              <RoiTotalsCards totals={data.roi.totals} />
+              {(revenueRows.length > 0 || pipelineRows.length > 0) && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                  {revenueRows.length > 0 && <div className="lg:col-span-2"><RevenueTable opportunities={revenueRows} /></div>}
+                  {pipelineRows.length > 0 && <div><PipelineDealsTable opportunities={pipelineRows} /></div>}
+                </div>
+              )}
+            </>
           );
         })()}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-          <OutreachTable meetings={data.meetings} onRefresh={fetchData} clientName={clientName} />
-          <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} />
-        </div>
-
-        {data.websiteInbounds && data.websiteInbounds.length > 0 && (
-          <WebsiteInboundsSection inbounds={data.websiteInbounds} />
-        )}
-
-        {data.warmLeads && data.warmLeads.length > 0 && (
-          <WarmLeadsSection warmLeads={data.warmLeads} />
-        )}
-
-        {clientName === 'myBasePay' && <GoogleAnalyticsCard />}
       </main>
 
       <Footer />

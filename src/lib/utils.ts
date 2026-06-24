@@ -1,4 +1,4 @@
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, RoiEntry, RoiOpportunity, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, RoiEntry, RoiOpportunity, RoiSummary, RoiTotals, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
 
 const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
@@ -98,24 +98,59 @@ function buildDealNote(entries: RoiEntry[], field: 'revenue' | 'pipeline'): stri
   return rest > 0 ? `${shown.join(' + ')} and ${rest} more` : shown.join(' + ');
 }
 
+// Returns true if the given (year, 0-indexed month) falls inside the period.
+// Used to filter ROI monthly cells when the user picks a time range on the
+// ROI tab. all_time = always true. this_week is treated as the current month
+// for ROI purposes (per-day billing doesn't apply).
+function monthInPeriod(year: number, month: number, period: TimePeriod): boolean {
+  if (period === 'all_time') return true;
+  const q = period.match(QUARTER_PATTERN);
+  if (q) {
+    const qNum = parseInt(q[1]);
+    const qYear = parseInt(q[2]);
+    if (year !== qYear) return false;
+    const startMonth = (qNum - 1) * 3;
+    return month >= startMonth && month <= startMonth + 2;
+  }
+  const now = new Date();
+  const nowYear = now.getFullYear();
+  const nowMonth = now.getMonth();
+  switch (period) {
+    case 'this_week':
+    case 'this_month':
+      return year === nowYear && month === nowMonth;
+    case 'this_quarter': {
+      const startMonth = Math.floor(nowMonth / 3) * 3;
+      return year === nowYear && month >= startMonth && month <= startMonth + 2;
+    }
+    case 'ytd':
+      return year === nowYear && month <= nowMonth;
+  }
+  return false;
+}
+
 // One sheet row = one opportunity. Same-name rows stay distinct so a deal that
 // has both a Pipeline Value row and a Contract row (e.g. Trust Hire's YTL)
 // renders as two separate rows on the dashboard (one in Revenue, one in
-// Pipeline). Splits monthly amounts into billed (past + current month) and
-// to-be-billed (future months) using today's month/year as the cutoff.
-function computeOpportunities(rows: RoiOpportunity[]): RoiOpportunity[] {
+// Pipeline). billed / toBeBilled count only the monthly cells whose (year,
+// month) falls inside the selected period AND that are past-or-current (for
+// billed) or future (for toBeBilled), using today's month/year as the cutoff.
+function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOpportunity[] {
   const now = new Date();
   const todayKey = now.getFullYear() * 12 + now.getMonth();
 
   const computed = rows.map((r) => {
     const monthsSum = r.monthly.reduce((s, m) => s + m.amount, 0);
-    const pastSum = r.monthly
+    const inPeriod = r.monthly.filter((m) => monthInPeriod(m.year, m.month, period));
+    const pastSum = inPeriod
       .filter((m) => m.year * 12 + m.month <= todayKey)
       .reduce((s, m) => s + m.amount, 0);
-    const futureSum = monthsSum - pastSum;
-    // Total Contract = Contract Value column directly; fall back to sum of
-    // monthly amounts for legacy rows where the column hasn't been filled in.
-    const totalContract = r.contractValue !== undefined ? r.contractValue : monthsSum;
+    const futureSum = inPeriod
+      .filter((m) => m.year * 12 + m.month > todayKey)
+      .reduce((s, m) => s + m.amount, 0);
+    // Total Contract prefers the lifetime figure; falls back to annual, then
+    // to sum of monthly amounts for legacy rows where neither column is set.
+    const totalContract = r.totalContractValue ?? r.annualContractValue ?? monthsSum;
     return {
       ...r,
       totalContract,
@@ -135,17 +170,25 @@ export function buildRoiSummary(
   entries: RoiEntry[],
   hasRoiTab: boolean,
   rawOpportunities: RoiOpportunity[] = [],
+  period: TimePeriod = 'all_time',
 ): RoiSummary | undefined {
   if (!hasRoiTab) return undefined;
-  const opportunities = computeOpportunities(rawOpportunities);
+  const opportunities = computeOpportunities(rawOpportunities, period);
   // Totals derived from the same opportunities[] array the per-client
   // dashboards use, so the PTG group breakdown stays consistent with what
   // each client's Revenue/Pipeline tables show.
+  const totals: RoiTotals = {
+    annual12moContract: opportunities.reduce((s, o) => s + (o.annualContractValue ?? 0), 0),
+    totalContractValue: opportunities.reduce((s, o) => s + (o.totalContractValue ?? o.annualContractValue ?? 0), 0),
+    totalBilled: opportunities.reduce((s, o) => s + o.billed, 0),
+    totalPipeline: opportunities.reduce((s, o) => s + (o.pipelineValue ?? 0), 0),
+  };
   const revenueTotal = opportunities.reduce((s, o) => s + o.totalContract, 0);
-  const pipelineTotal = opportunities.reduce((s, o) => s + (o.pipelineValue ?? 0), 0);
+  const pipelineTotal = totals.totalPipeline;
   return {
     entries,
     opportunities,
+    totals,
     revenueTotal,
     pipelineTotal,
     revenue: revenueTotal > 0 ? formatGBP(revenueTotal) : 'N/A',
@@ -237,9 +280,10 @@ export function buildDashboardData(
   // is stable regardless of which period is currently selected.
   const availableQuarters = deriveAvailableQuarters(meetings, leads);
 
-  // ROI summary — lifetime totals across all entries, ignores the time filter
-  // because revenue/pipeline figures don't make sense filtered to "this week".
-  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false, roiOpportunities ?? []);
+  // ROI summary — Annual / Total / Pipeline totals are time-independent and
+  // ignore `period`. Billed / To Be Billed honour `period` so the ROI tab's
+  // time filter can scope billing to a specific quarter / YTD / etc.
+  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false, roiOpportunities ?? [], period);
 
   return {
     meetings: filteredMeetings,
