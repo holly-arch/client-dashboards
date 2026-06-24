@@ -12,6 +12,7 @@ import MetricCards from './MetricCards';
 import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
+import WarmLeadsSection from './WarmLeadsSection';
 import GoogleAnalyticsCard from './GoogleAnalyticsCard';
 import Footer from './Footer';
 
@@ -212,6 +213,10 @@ export default function Dashboard() {
 
         {data.websiteInbounds && data.websiteInbounds.length > 0 && (
           <WebsiteInboundsSection inbounds={data.websiteInbounds} />
+        )}
+
+        {data.warmLeads && data.warmLeads.length > 0 && (
+          <WarmLeadsSection warmLeads={data.warmLeads} />
         )}
 
         {clientName === 'myBasePay' && <GoogleAnalyticsCard />}

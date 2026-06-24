@@ -87,6 +87,17 @@ export interface RoiSummary {
   pipelineNote?: string;
 }
 
+export interface WarmLeadRecord {
+  id: string;
+  firstName: string;
+  surname: string;
+  company: string;
+  campaign: string;
+  contact: string;
+  status: string;
+  orrjoNotes: string;
+}
+
 export interface WebsiteInboundRecord {
   id: string;
   firstName: string;
@@ -105,6 +116,7 @@ export interface DashboardData {
   touchpoints?: { calls?: number; linkedin?: number; email?: number };
   roi?: RoiSummary;
   websiteInbounds?: WebsiteInboundRecord[];
+  warmLeads?: WarmLeadRecord[];
   availableQuarters?: QuarterOption[];
   lastUpdated: string;
 }

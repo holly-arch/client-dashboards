@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiOpportunity } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, RoiEntry, RoiOpportunity } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -196,6 +196,16 @@ const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   notes: ['notes', 'note'],
 };
 
+const WARM_LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
+  firstName: ['first name', 'firstname', 'first', 'forename'],
+  surname: ['surname', 'last name', 'lastname', 'second name', 'family name'],
+  company: ['company', 'company name', 'business', 'organisation', 'organization'],
+  campaign: ['campaign', 'campaign name', 'source campaign'],
+  contact: ['contact', 'contact info', 'contact details', 'email', 'phone'],
+  status: ['status', 'lead status', 'pipeline status'],
+  orrjoNotes: ['orrjo notes', 'orrjo note', 'orrjo', 'notes', 'note'],
+};
+
 function detectColumns(headers: string[], matchers: Record<string, string[]>): Record<string, number> {
   const mapping: Record<string, number> = {};
   const lowerHeaders = headers.map((h) => h.toLowerCase().trim());
@@ -330,6 +340,7 @@ export async function fetchDashboardRawData(
   leads: LeadRecord[];
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
+  warmLeads: WarmLeadRecord[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -343,11 +354,12 @@ export async function fetchDashboardRawData(
   // Fetch all tabs in parallel (Touchpoints + Website Inbounds + ROI tabs are optional — fail silently).
   // ROI fetch uses a sentinel `null` for "tab doesn't exist" so we can distinguish missing tab from
   // empty tab (clients who created the tab but haven't entered deals yet should still see the ROI card).
-  const [meetingRows, leadRows, touchpointRows, inboundRows, roiResult] = await Promise.all([
+  const [meetingRows, leadRows, touchpointRows, inboundRows, warmLeadRows, roiResult] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
     fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
     fetchSheet(sheetId, 'Website Inbounds').catch(() => [] as string[][]),
+    fetchSheet(sheetId, 'Warm Leads').catch(() => [] as string[][]),
     fetchSheet(sheetId, 'ROI').then((rows) => ({ rows, exists: true })).catch(() => ({ rows: [] as string[][], exists: false })),
   ]);
 
@@ -519,6 +531,31 @@ export async function fetchDashboardRawData(
     }
   }
 
+  // --- Process Warm Leads ---
+  // Optional tab. Currently used by Tower Supplies; any client that adds a
+  // "Warm Leads" tab with the matching columns gets the section auto-rendered.
+  const warmLeads: WarmLeadRecord[] = [];
+  if (warmLeadRows.length > 1) {
+    const wCols = detectColumns(warmLeadRows[0], WARM_LEAD_COLUMN_MATCHERS);
+    for (let i = 1; i < warmLeadRows.length; i++) {
+      const row = warmLeadRows[i];
+      const firstName = getVal(row, wCols.firstName);
+      const surname = getVal(row, wCols.surname);
+      const company = getVal(row, wCols.company);
+      if (!firstName && !surname && !company) continue;
+      warmLeads.push({
+        id: `wl-${i}`,
+        firstName,
+        surname,
+        company,
+        campaign: getVal(row, wCols.campaign),
+        contact: getVal(row, wCols.contact),
+        status: getVal(row, wCols.status),
+        orrjoNotes: getVal(row, wCols.orrjoNotes),
+      });
+    }
+  }
+
   // --- Process ROI ---
   // Schema: Opportunity | Pipeline Value | Contract Value | Notes | <Mon YYYY> | <Mon YYYY> | ...
   // We emit two outputs:
@@ -611,6 +648,7 @@ export async function fetchDashboardRawData(
     leads,
     touchpointRows: parsedTouchpoints,
     websiteInbounds,
+    warmLeads,
     roiEntries,
     roiOpportunities,
     hasRoiTab,
@@ -625,6 +663,7 @@ export function shiftDatesToToday(raw: {
   leads: LeadRecord[];
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
+  warmLeads: WarmLeadRecord[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -673,6 +712,7 @@ export function shiftDatesToToday(raw: {
       week: shift(t.week) || t.week,
     })),
     websiteInbounds: raw.websiteInbounds,
+    warmLeads: raw.warmLeads,
     roiEntries: raw.roiEntries,
     roiOpportunities: raw.roiOpportunities,
     hasRoiTab: raw.hasRoiTab,

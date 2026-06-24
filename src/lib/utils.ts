@@ -1,4 +1,4 @@
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntry, RoiOpportunity, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, RoiEntry, RoiOpportunity, RoiSummary, DashboardData, DashboardMetrics, TimePeriod, QuarterOption, QuarterPeriod } from './types';
 
 const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
@@ -170,6 +170,7 @@ export function buildDashboardData(
   roiEntries?: RoiEntry[],
   hasRoiTab?: boolean,
   roiOpportunities?: RoiOpportunity[],
+  warmLeads?: WarmLeadRecord[],
 ): DashboardData {
   const range = getDateRange(period);
 
@@ -248,6 +249,7 @@ export function buildDashboardData(
     touchpoints,
     ...(roi ? { roi } : {}),
     ...(websiteInbounds && websiteInbounds.length > 0 ? { websiteInbounds } : {}),
+    ...(warmLeads && warmLeads.length > 0 ? { warmLeads } : {}),
     ...(availableQuarters.length > 0 ? { availableQuarters } : {}),
     lastUpdated: new Date().toISOString(),
   };

@@ -35,6 +35,7 @@ export async function GET(request: Request) {
       raw.roiEntries,
       raw.hasRoiTab,
       raw.roiOpportunities,
+      raw.warmLeads,
     );
 
     return NextResponse.json(data);
