@@ -2,7 +2,7 @@ import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, RoiEntr
 
 const QUARTER_PATTERN = /^q([1-4])_(\d{4})$/;
 
-function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
+export function getDateRange(period: TimePeriod): { start: Date; end: Date } | null {
   if (period === 'all_time') return null;
 
   // Specific quarter (e.g. q3_2025)
@@ -72,7 +72,7 @@ function deriveAvailableQuarters(meetings: MeetingRecord[], leads: LeadRecord[])
     }));
 }
 
-function isInRange(dateStr: string, range: { start: Date; end: Date } | null): boolean {
+export function isInRange(dateStr: string, range: { start: Date; end: Date } | null): boolean {
   if (!range) return true; // All Time — include everything
   if (!dateStr) return false; // No date — only show in All Time
   const d = new Date(dateStr);
