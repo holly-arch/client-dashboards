@@ -80,13 +80,26 @@ function capitalize(s: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 }
 
-// Pull the first non-empty line from a post body and trim to ~100 chars so the
-// Content table's Title column stays readable.
+// Counts characters that look like real text (letters or digits) vs decorative
+// emoji / punctuation. Posts that lead with a visual marker like "🟠" on its
+// own line should fall through to the next line with actual prose.
+function hasText(line: string): boolean {
+  let textChars = 0;
+  for (const ch of line) {
+    if (/[\p{L}\p{N}]/u.test(ch)) textChars++;
+    if (textChars >= 3) return true;
+  }
+  return false;
+}
+
+// Pull the first meaningful line from a post body and trim to ~100 chars so
+// the Content table's Title column stays readable.
 function firstLine(text: string, max = 100): string {
   if (!text) return '(no text)';
-  const line = text.split('\n').map((l) => l.trim()).find((l) => l.length > 0) ?? text.trim();
-  if (line.length <= max) return line;
-  return line.slice(0, max - 1).trimEnd() + '…';
+  const lines = text.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+  const meaningful = lines.find(hasText) ?? lines[0] ?? text.trim();
+  if (meaningful.length <= max) return meaningful;
+  return meaningful.slice(0, max - 1).trimEnd() + '…';
 }
 
 function deriveStatus(p: PlanablePost): string {
