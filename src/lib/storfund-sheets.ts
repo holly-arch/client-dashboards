@@ -1,4 +1,5 @@
 import { fetchSheet, fetchSheetWithColor, parseDate, SheetCellMeta } from './sheets-api';
+import { fetchPlanableContent } from './planable-api';
 import { getDateRange, isInRange } from './utils';
 import { TimePeriod } from './types';
 import {
@@ -370,7 +371,19 @@ export async function fetchStorfundData(period: TimePeriod): Promise<StorfundV2D
   const assetRows: string[][] = assetMeta.map((row) => row.map((cell) => cell.v));
 
   const workstreams = parseWorkstreams(workRows);
-  const allContent = parseContent(contentRows);
+  let allContent = parseContent(contentRows);
+  // Planable is an optional secondary source. When PLANABLE_API_KEY +
+  // PLANABLE_WORKSPACE_ID are set we append posts from Planable to whatever's
+  // in the sheet's Content tab. Errors are swallowed so the dashboard keeps
+  // rendering even if the Planable API is down or unauthorised.
+  if (process.env.PLANABLE_API_KEY && process.env.PLANABLE_WORKSPACE_ID) {
+    try {
+      const planableRows = await fetchPlanableContent();
+      allContent = [...allContent, ...planableRows];
+    } catch (e) {
+      console.error('Planable content fetch failed:', e instanceof Error ? e.message : e);
+    }
+  }
   const allAssets = parseAssets(assetRows, assetMeta);
   const allOutreach = parseOutreach(outreachRows);
   const dataMetrics = parseDataMetrics(dataRows);
