@@ -96,6 +96,14 @@ export interface RoiSummary {
   pipelineNote?: string;
 }
 
+export interface WebinarRegistrant {
+  id: string;
+  firstName: string;
+  lastName: string;
+  organisation: string;
+  jobTitle: string;
+}
+
 export interface WarmLeadRecord {
   id: string;
   firstName: string;
@@ -126,6 +134,7 @@ export interface DashboardData {
   roi?: RoiSummary;
   websiteInbounds?: WebsiteInboundRecord[];
   warmLeads?: WarmLeadRecord[];
+  webinarRegistrants?: WebinarRegistrant[];
   availableQuarters?: QuarterOption[];
   lastUpdated: string;
 }

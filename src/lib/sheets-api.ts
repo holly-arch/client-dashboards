@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, RoiEntry, RoiOpportunity } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, WebinarRegistrant, RoiEntry, RoiOpportunity } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -196,6 +196,13 @@ const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   notes: ['notes', 'note'],
 };
 
+const WEBINAR_COLUMN_MATCHERS: Record<string, string[]> = {
+  firstName: ['first name', 'firstname', 'first', 'forename'],
+  lastName: ['last name', 'surname', 'lastname', 'second name', 'family name'],
+  organisation: ['organisation', 'organization', 'company', 'company name', 'business', 'org'],
+  jobTitle: ['job title', 'title', 'role', 'position'],
+};
+
 const WARM_LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   firstName: ['first name', 'firstname', 'first', 'forename'],
   surname: ['surname', 'last name', 'lastname', 'second name', 'family name'],
@@ -341,6 +348,7 @@ export async function fetchDashboardRawData(
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
   warmLeads: WarmLeadRecord[];
+  webinarRegistrants: WebinarRegistrant[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -354,12 +362,19 @@ export async function fetchDashboardRawData(
   // Fetch all tabs in parallel (Touchpoints + Website Inbounds + ROI tabs are optional — fail silently).
   // ROI fetch uses a sentinel `null` for "tab doesn't exist" so we can distinguish missing tab from
   // empty tab (clients who created the tab but haven't entered deals yet should still see the ROI card).
-  const [meetingRows, leadRows, touchpointRows, inboundRows, warmLeadRows, roiResult] = await Promise.all([
+  // Webinar registrants live on a SEPARATE sheet (Zoom export format),
+  // pointed at by WEBINAR_SHEET_ID env var. Tab name defaults to "Sheet1"
+  // (Zoom's default) but is overridable via WEBINAR_TAB.
+  const webinarSheetId = process.env.WEBINAR_SHEET_ID;
+  const webinarTab = process.env.WEBINAR_TAB || 'Sheet1';
+
+  const [meetingRows, leadRows, touchpointRows, inboundRows, warmLeadRows, webinarRows, roiResult] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
     fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
     fetchSheet(sheetId, 'Website Inbounds').catch(() => [] as string[][]),
     fetchSheet(sheetId, 'Warm Leads').catch(() => [] as string[][]),
+    webinarSheetId ? fetchSheet(webinarSheetId, webinarTab).catch(() => [] as string[][]) : Promise.resolve([] as string[][]),
     fetchSheet(sheetId, 'ROI').then((rows) => ({ rows, exists: true })).catch(() => ({ rows: [] as string[][], exists: false })),
   ]);
 
@@ -531,6 +546,30 @@ export async function fetchDashboardRawData(
     }
   }
 
+  // --- Process Webinar Registrants ---
+  // Source sheet is typically a Zoom registration export with a "Registration
+  // Report" cell in A1 and a couple of summary rows ("No. Registered" / count)
+  // before the actual data. The detectColumns matcher reads row 0 and locates
+  // the real headers by name; per-row we skip anything without a first or last
+  // name so the summary rows don't render as registrants.
+  const webinarRegistrants: WebinarRegistrant[] = [];
+  if (webinarRows.length > 1) {
+    const wCols = detectColumns(webinarRows[0], WEBINAR_COLUMN_MATCHERS);
+    for (let i = 1; i < webinarRows.length; i++) {
+      const row = webinarRows[i];
+      const firstName = getVal(row, wCols.firstName);
+      const lastName = getVal(row, wCols.lastName);
+      if (!firstName && !lastName) continue;
+      webinarRegistrants.push({
+        id: `wr-${i}`,
+        firstName,
+        lastName,
+        organisation: getVal(row, wCols.organisation),
+        jobTitle: getVal(row, wCols.jobTitle),
+      });
+    }
+  }
+
   // --- Process Warm Leads ---
   // Optional tab. Currently used by Tower Supplies; any client that adds a
   // "Warm Leads" tab with the matching columns gets the section auto-rendered.
@@ -649,6 +688,7 @@ export async function fetchDashboardRawData(
     touchpointRows: parsedTouchpoints,
     websiteInbounds,
     warmLeads,
+    webinarRegistrants,
     roiEntries,
     roiOpportunities,
     hasRoiTab,
@@ -664,6 +704,7 @@ export function shiftDatesToToday(raw: {
   touchpointRows: TouchpointRow[];
   websiteInbounds: WebsiteInboundRecord[];
   warmLeads: WarmLeadRecord[];
+  webinarRegistrants: WebinarRegistrant[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -713,6 +754,7 @@ export function shiftDatesToToday(raw: {
     })),
     websiteInbounds: raw.websiteInbounds,
     warmLeads: raw.warmLeads,
+    webinarRegistrants: raw.webinarRegistrants,
     roiEntries: raw.roiEntries,
     roiOpportunities: raw.roiOpportunities,
     hasRoiTab: raw.hasRoiTab,

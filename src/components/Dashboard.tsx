@@ -13,6 +13,7 @@ import OutreachTable from './OutreachTable';
 import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
 import WarmLeadsSection from './WarmLeadsSection';
+import WebinarRegistrantsSection from './WebinarRegistrantsSection';
 import GoogleAnalyticsCard from './GoogleAnalyticsCard';
 import DashboardTabs, { DashboardTab } from './DashboardTabs';
 import RoiTotalsCards from './RoiTotalsCards';
@@ -219,6 +220,10 @@ export default function Dashboard() {
 
             {data.warmLeads && data.warmLeads.length > 0 && (
               <WarmLeadsSection warmLeads={data.warmLeads} />
+            )}
+
+            {data.webinarRegistrants && data.webinarRegistrants.length > 0 && (
+              <WebinarRegistrantsSection registrants={data.webinarRegistrants} />
             )}
 
             {clientName === 'myBasePay' && <GoogleAnalyticsCard />}
