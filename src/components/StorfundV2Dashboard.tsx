@@ -92,20 +92,25 @@ export default function StorfundV2Dashboard() {
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Storfund');
 
+  // Cookie first (survives Safari ITP), localStorage fallback that re-POSTs
+  // to refresh the cookie so the user is upgraded automatically.
   useEffect(() => {
-    const stored = localStorage.getItem('dashboard_auth');
-    if (stored) {
-      fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: stored }),
+    fetch('/api/auth')
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.ok) { setAuthed(true); return; }
+        const stored = localStorage.getItem('dashboard_auth');
+        if (!stored) { setAuthed(false); return; }
+        fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: stored }),
+        })
+          .then((r) => r.json())
+          .then((data) => setAuthed(data.ok))
+          .catch(() => setAuthed(false));
       })
-        .then((res) => res.json())
-        .then((d) => setAuthed(d.ok))
-        .catch(() => setAuthed(false));
-    } else {
-      setAuthed(false);
-    }
+      .catch(() => setAuthed(false));
   }, []);
 
   useEffect(() => {

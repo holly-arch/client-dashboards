@@ -99,21 +99,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Client');
 
-  // Check stored password on mount
+  // Check auth on mount. Cookie first (survives Safari's 7-day ITP wipe),
+  // then localStorage fallback (which re-POSTs to refresh the cookie so the
+  // user is upgraded to cookie-only on next visit).
   useEffect(() => {
-    const stored = localStorage.getItem('dashboard_auth');
-    if (stored) {
-      fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: stored }),
+    fetch('/api/auth')
+      .then((res) => res.json())
+      .then((d) => {
+        if (d.ok) { setAuthed(true); return; }
+        const stored = localStorage.getItem('dashboard_auth');
+        if (!stored) { setAuthed(false); return; }
+        fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: stored }),
+        })
+          .then((r) => r.json())
+          .then((data) => setAuthed(data.ok))
+          .catch(() => setAuthed(false));
       })
-        .then((res) => res.json())
-        .then((data) => setAuthed(data.ok))
-        .catch(() => setAuthed(false));
-    } else {
-      setAuthed(false);
-    }
+      .catch(() => setAuthed(false));
   }, []);
 
   // Fetch client config once on mount
