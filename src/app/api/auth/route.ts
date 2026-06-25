@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
   // No password configured on this deployment — open access.
   if (!correct) return NextResponse.json({ ok: true });
 
-  if (password !== correct) {
+  // Case-insensitive match so clients typing "pgi12345" instead of "PGI12345"
+  // aren't bounced. Acceptable trade-off here — these passwords gate viewing
+  // of campaign data, not secrets, and the UX win matters more.
+  if ((password ?? '').toLowerCase() !== correct.toLowerCase()) {
     return NextResponse.json({ ok: false, error: 'Incorrect password' }, { status: 401 });
   }
 
@@ -44,7 +47,7 @@ export async function GET(request: NextRequest) {
   if (!correct) return NextResponse.json({ ok: true });
 
   const cookieValue = request.cookies.get(COOKIE_NAME)?.value;
-  if (cookieValue && cookieValue === correct) {
+  if (cookieValue && cookieValue.toLowerCase() === correct.toLowerCase()) {
     return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ ok: false });
