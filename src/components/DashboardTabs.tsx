@@ -14,7 +14,7 @@ const TABS: { value: DashboardTab; label: string }[] = [
 
 export default function DashboardTabs({ selected, onChange }: DashboardTabsProps) {
   return (
-    <div className="inline-flex rounded-full p-1" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="inline-flex w-fit self-start rounded-full p-1" style={{ background: '#141414', border: '1px solid #252525' }}>
       {TABS.map((t) => {
         const active = selected === t.value;
         return (
