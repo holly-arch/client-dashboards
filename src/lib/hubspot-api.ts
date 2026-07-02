@@ -112,7 +112,8 @@ async function execute<T>(slug: string, args: Record<string, unknown>): Promise<
     dangerouslySkipVersionCheck: true,
   })) as { successful?: boolean; data?: T; error?: string | null };
   if (result?.successful === false) {
-    throw new Error(`HubSpot ${slug} failed: ${result.error ?? 'unknown error'}`);
+    console.error(`[hubspot] ${slug} failed. Full result:`, JSON.stringify(result));
+    throw new Error(`HubSpot ${slug} failed: ${result.error ?? 'unknown error'} | full=${JSON.stringify(result).slice(0, 400)}`);
   }
   return result?.data ?? ({} as T);
 }
