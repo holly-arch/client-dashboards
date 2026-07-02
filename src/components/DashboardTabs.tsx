@@ -1,21 +1,27 @@
 'use client';
 
-export type DashboardTab = 'campaign' | 'roi';
+export type DashboardTab = 'campaign' | 'roi' | 'hubspot';
+
+interface TabDef {
+  value: DashboardTab;
+  label: string;
+}
 
 interface DashboardTabsProps {
   selected: DashboardTab;
   onChange: (tab: DashboardTab) => void;
+  tabs?: TabDef[];
 }
 
-const TABS: { value: DashboardTab; label: string }[] = [
+const DEFAULT_TABS: TabDef[] = [
   { value: 'campaign', label: 'Campaign' },
   { value: 'roi', label: 'ROI' },
 ];
 
-export default function DashboardTabs({ selected, onChange }: DashboardTabsProps) {
+export default function DashboardTabs({ selected, onChange, tabs = DEFAULT_TABS }: DashboardTabsProps) {
   return (
     <div className="inline-flex w-fit self-start rounded-full p-1" style={{ background: '#141414', border: '1px solid #252525' }}>
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const active = selected === t.value;
         return (
           <button

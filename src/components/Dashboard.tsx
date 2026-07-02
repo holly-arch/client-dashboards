@@ -15,6 +15,7 @@ import WebsiteInboundsSection from './WebsiteInboundsSection';
 import WarmLeadsSection from './WarmLeadsSection';
 import WebinarRegistrantsSection from './WebinarRegistrantsSection';
 import GoogleAnalyticsCard from './GoogleAnalyticsCard';
+import HubSpotSection from './HubSpotSection';
 import DashboardTabs, { DashboardTab } from './DashboardTabs';
 import RoiTotalsCards from './RoiTotalsCards';
 import Footer from './Footer';
@@ -196,9 +197,14 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3">
             <div>
               <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
-              <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{activeTab === 'roi' ? 'ROI Dashboard' : 'Campaign Dashboard'}</h1>
+              <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{activeTab === 'roi' ? 'ROI Dashboard' : activeTab === 'hubspot' ? 'HubSpot Dashboard' : 'Campaign Dashboard'}</h1>
             </div>
-            {data.roi && <DashboardTabs selected={activeTab} onChange={setActiveTab} />}
+            {(() => {
+              const tabs: { value: DashboardTab; label: string }[] = [{ value: 'campaign', label: 'Campaign' }];
+              if (data.roi) tabs.push({ value: 'roi', label: 'ROI' });
+              if (clientName === 'myBasePay') tabs.push({ value: 'hubspot', label: 'HubSpot' });
+              return tabs.length > 1 ? <DashboardTabs selected={activeTab} onChange={setActiveTab} tabs={tabs} /> : null;
+            })()}
           </div>
           <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
         </div>
@@ -229,6 +235,8 @@ export default function Dashboard() {
             {clientName === 'myBasePay' && <GoogleAnalyticsCard />}
           </>
         )}
+
+        {activeTab === 'hubspot' && clientName === 'myBasePay' && <HubSpotSection />}
 
         {activeTab === 'roi' && data.roi && (() => {
           const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);
