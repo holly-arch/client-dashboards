@@ -21,6 +21,7 @@ export interface MeetingRecord {
   industry?: string;
   fleetSize?: number;
   source?: string;
+  channel?: string;
 }
 
 export interface LeadRecord {

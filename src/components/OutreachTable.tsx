@@ -18,11 +18,13 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
   const hasPartnerStatus = meetings.some((m) => m.partnerStatus !== undefined);
   const hasIndustry = meetings.some((m) => m.industry !== undefined);
   const hasFleetSize = meetings.some((m) => m.fleetSize !== undefined);
-  // Source column auto-detection picked up Lytx / Coral Vision / myBasePay
-  // sheets that happen to have a "Source" / "Lead Source" / "Channel" header
-  // unintentionally. Gate by explicit client name list.
-  const SOURCE_CLIENTS = new Set(['Tower Supplies', 'Wire']);
+  // Source / Channel columns are auto-detected but other clients' sheets
+  // happen to have a "Source" header that isn't meant for display. Gate by
+  // explicit client-name list.
+  const SOURCE_CLIENTS = new Set(['Tower Supplies', 'Wire', 'Storfund']);
+  const CHANNEL_CLIENTS = new Set(['Storfund']);
   const hasSource = SOURCE_CLIENTS.has(clientName ?? '') && meetings.some((m) => m.source !== undefined);
+  const hasChannel = CHANNEL_CLIENTS.has(clientName ?? '') && meetings.some((m) => m.channel !== undefined);
   const showMeetingDate = clientName === 'Jua' || clientName === 'Tower Supplies';
 
   return (
@@ -48,6 +50,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
               <th className="text-left py-2 pr-3 font-medium">Date Booked</th>
               {showMeetingDate && <th className="text-left py-2 pr-3 font-medium">Meeting Date</th>}
               <th className="text-left py-2 pr-3 font-medium">Status</th>
+              {hasChannel && <th className="text-left py-2 pr-3 font-medium">Channel</th>}
               {hasSource && <th className="text-left py-2 pr-3 font-medium">Source</th>}
               {hasShortStatus && <th className="text-left py-2 pr-3 font-medium">Short Status</th>}
               {hasPartnerStatus && <th className="text-left py-2 font-medium">Partner Status</th>}
@@ -64,6 +67,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(m.dateCreated)}</td>
                 {showMeetingDate && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.meetingDate ? formatDate(m.meetingDate) : '—'}</td>}
                 <td className="py-3 pr-3"><StatusBadge status={m.subStatus} /></td>
+                {hasChannel && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.channel || '—'}</td>}
                 {hasSource && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.source || '—'}</td>}
                 {hasShortStatus && (
                   <td className="py-3 pr-3">
@@ -79,7 +83,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             ))}
             {meetings.length === 0 && (
               <tr>
-                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasIndustry ? 1 : 0) + (hasFleetSize ? 1 : 0) + (hasSource ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
+                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasIndustry ? 1 : 0) + (hasFleetSize ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
               </tr>
             )}
           </tbody>
@@ -98,6 +102,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             <p className="text-xs truncate" style={{ color: '#888' }}>{m.contactTitle}</p>
             {hasIndustry && m.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {m.industry}</p>}
             {hasFleetSize && m.fleetSize !== undefined && <p className="text-xs" style={{ color: '#888' }}>Fleet size: {m.fleetSize.toLocaleString('en-GB')}</p>}
+            {hasChannel && m.channel && <p className="text-xs" style={{ color: '#888' }}>Channel: {m.channel}</p>}
             {hasSource && m.source && <p className="text-xs" style={{ color: '#888' }}>Source: {m.source}</p>}
             <p className="text-xs mt-1" style={{ color: '#666' }}>Booked: {formatDate(m.dateCreated)}</p>
             {showMeetingDate && <p className="text-xs" style={{ color: '#666' }}>Meeting: {m.meetingDate ? formatDate(m.meetingDate) : '—'}</p>}

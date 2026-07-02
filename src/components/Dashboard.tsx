@@ -205,7 +205,7 @@ export default function Dashboard() {
 
         {activeTab === 'campaign' && (
           <>
-            {['Jua', 'myBasePay', 'Tower Supplies'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
+            {['Jua', 'myBasePay', 'Tower Supplies', 'Storfund'].includes(clientName) && data.touchpoints && <TouchpointsCard calls={data.touchpoints.calls} linkedin={data.touchpoints.linkedin} email={data.touchpoints.email} />}
             {data.metrics.avgFleetSize !== undefined && <FleetSizeCard avgFleetSize={data.metrics.avgFleetSize} />}
             <MetricCards metrics={data.metrics} />
 
