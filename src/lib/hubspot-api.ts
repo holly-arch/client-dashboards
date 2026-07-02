@@ -1,7 +1,7 @@
 import { Composio } from '@composio/core';
 
 const COMPOSIO_USER_ID = 'mybasepay';
-const DEAL_PAGE_LIMIT = 100;
+const DEAL_PAGE_LIMIT = 200;
 const MAX_DEAL_PAGES = 5;
 
 interface HubSpotDealRaw {
@@ -170,14 +170,19 @@ async function fetchAllDeals(): Promise<{ raw: HubSpotDealRaw[]; truncated: bool
   let after: string | undefined;
   let truncated = false;
 
+  // SEARCH_DEALS with sort DESC on hs_lastmodifieddate surfaces the most
+  // recently active deals first — otherwise HubSpot returns oldest-created
+  // deals first, which are almost all closed years ago and hide the current
+  // pipeline entirely.
   for (let page = 0; page < MAX_DEAL_PAGES; page++) {
     const args: Record<string, unknown> = {
       limit: DEAL_PAGE_LIMIT,
       properties: ['dealname', 'amount', 'dealstage', 'pipeline', 'closedate', 'createdate', 'hs_lastmodifieddate'],
+      sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
     };
     if (after) args.after = after;
 
-    const data = await execute<HubSpotListDealsResponse>('HUBSPOT_LIST_DEALS', args);
+    const data = await execute<HubSpotListDealsResponse>('HUBSPOT_SEARCH_DEALS', args);
     const results = data.results ?? [];
     all.push(...results);
     after = data.paging?.next?.after;
