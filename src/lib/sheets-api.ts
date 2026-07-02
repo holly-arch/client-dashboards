@@ -160,6 +160,8 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   status: ['status', 'opportunity status', 'pipeline status'],
   lytxNotes: ['lytx notes'],
   industry: ['industry'],
+  source: ['source', 'lead source', 'list', 'data source'],
+  channel: ['channel', 'contact channel', 'outreach channel', 'contact method'],
 };
 
 // ROI tab schema: each row is one opportunity. Fixed metadata columns
@@ -477,6 +479,8 @@ export async function fetchDashboardRawData(
       const date = parseDate(dateBooked) || '';
       const lytxNotes = getVal(row, lCols.lytxNotes);
       const industry = getVal(row, lCols.industry);
+      const source = getVal(row, lCols.source);
+      const channel = getVal(row, lCols.channel);
 
       leads.push({
         id: `l-${i}`,
@@ -488,6 +492,8 @@ export async function fetchDashboardRawData(
         sheetRowIndex: i + 1,
         ...(lytxNotes !== undefined && lCols.lytxNotes !== undefined ? { lytxNotes } : {}),
         ...(lCols.industry !== undefined ? { industry } : {}),
+        ...(lCols.source !== undefined ? { source } : {}),
+        ...(lCols.channel !== undefined ? { channel } : {}),
       });
     }
   }

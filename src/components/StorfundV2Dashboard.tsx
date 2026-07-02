@@ -211,7 +211,7 @@ export default function StorfundV2Dashboard() {
         {/* Existing Meetings + Leads tables — unchanged */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <OutreachTable meetings={leadData.meetings} onRefresh={fetchData} clientName={clientName} />
-          <PipelineTable leads={leadData.leads} statusCounts={leadData.statusCounts} onRefresh={fetchData} />
+          <PipelineTable leads={leadData.leads} statusCounts={leadData.statusCounts} onRefresh={fetchData} clientName={clientName} />
         </div>
 
         {/* 3 — Content published */}

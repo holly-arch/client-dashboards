@@ -34,6 +34,8 @@ export interface LeadRecord {
   sheetRowIndex?: number;
   lytxNotes?: string;
   industry?: string;
+  source?: string;
+  channel?: string;
 }
 
 export interface DashboardMetrics {

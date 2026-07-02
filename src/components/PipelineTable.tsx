@@ -10,11 +10,15 @@ interface PipelineTableProps {
   leads: LeadRecord[];
   statusCounts: Record<string, number>;
   onRefresh?: () => void;
+  clientName?: string;
 }
 
 const STATUS_ORDER = ['Lead', 'Nurture', 'Lost', 'Closed/Lost', 'Closed Lost', 'Meeting Booked', 'Engaged Lead'];
 
-export default function PipelineTable({ leads, statusCounts, onRefresh }: PipelineTableProps) {
+const SOURCE_CLIENTS = new Set(['Tower Supplies', 'Wire', 'Storfund']);
+const CHANNEL_CLIENTS = new Set(['Storfund']);
+
+export default function PipelineTable({ leads, statusCounts, onRefresh, clientName }: PipelineTableProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const filteredLeads = activeFilter ? leads.filter((l) => l.status === activeFilter) : leads;
@@ -22,6 +26,8 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
   // Detect if editable columns exist
   const hasLytxNotes = leads.some((l) => l.lytxNotes !== undefined);
   const hasIndustry = leads.some((l) => l.industry !== undefined);
+  const hasSource = SOURCE_CLIENTS.has(clientName ?? '') && leads.some((l) => l.source !== undefined);
+  const hasChannel = CHANNEL_CLIENTS.has(clientName ?? '') && leads.some((l) => l.channel !== undefined);
 
   return (
     <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -66,6 +72,8 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
               {hasIndustry && <th className="text-left py-2 pr-3 font-medium">Industry</th>}
               <th className="text-left py-2 pr-3 font-medium">Date</th>
               <th className="text-left py-2 pr-3 font-medium">Status</th>
+              {hasChannel && <th className="text-left py-2 pr-3 font-medium">Channel</th>}
+              {hasSource && <th className="text-left py-2 pr-3 font-medium">Source</th>}
               {hasLytxNotes && <th className="text-left py-2 font-medium">Lytx Notes</th>}
             </tr>
           </thead>
@@ -78,6 +86,8 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
                 {hasIndustry && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.industry || '—'}</td>}
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(l.date)}</td>
                 <td className="py-3 pr-3"><StatusBadge status={l.status} /></td>
+                {hasChannel && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.channel || '—'}</td>}
+                {hasSource && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.source || '—'}</td>}
                 {hasLytxNotes && (
                   <td className="py-3">
                     <EditableText value={l.lytxNotes || ''} sheetRowIndex={l.sheetRowIndex!} field="lytxNotes" placeholder="Add note..." onSaved={onRefresh} />
@@ -87,7 +97,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
             ))}
             {filteredLeads.length === 0 && (
               <tr>
-                <td colSpan={5 + (hasIndustry ? 1 : 0) + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
+                <td colSpan={5 + (hasIndustry ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
               </tr>
             )}
           </tbody>
@@ -105,6 +115,8 @@ export default function PipelineTable({ leads, statusCounts, onRefresh }: Pipeli
             <p className="text-sm" style={{ color: '#b0b0b0' }}>{l.contactName}</p>
             <p className="text-xs truncate" style={{ color: '#888' }}>{l.contactTitle}</p>
             {hasIndustry && l.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {l.industry}</p>}
+            {hasChannel && l.channel && <p className="text-xs" style={{ color: '#888' }}>Channel: {l.channel}</p>}
+            {hasSource && l.source && <p className="text-xs" style={{ color: '#888' }}>Source: {l.source}</p>}
             {l.date && <p className="text-xs mt-1" style={{ color: '#666' }}>{formatDate(l.date)}</p>}
             {hasLytxNotes && (
               <div className="mt-2 pt-2" style={{ borderTop: '1px solid #252525' }}>

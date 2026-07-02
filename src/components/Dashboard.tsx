@@ -218,7 +218,7 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <OutreachTable meetings={data.meetings} onRefresh={fetchData} clientName={clientName} />
-              <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} />
+              <PipelineTable leads={data.leads} statusCounts={data.statusCounts} onRefresh={fetchData} clientName={clientName} />
             </div>
 
             {data.websiteInbounds && data.websiteInbounds.length > 0 && (
