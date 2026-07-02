@@ -106,13 +106,29 @@ function client(): Composio {
 
 async function execute<T>(slug: string, args: Record<string, unknown>): Promise<T> {
   const composio = client();
-  const result = (await composio.tools.execute(slug, {
-    userId: COMPOSIO_USER_ID,
-    arguments: args,
-    dangerouslySkipVersionCheck: true,
-  })) as { successful?: boolean; data?: T; error?: string | null };
+  let result: { successful?: boolean; data?: T; error?: string | null };
+  try {
+    result = (await composio.tools.execute(slug, {
+      userId: COMPOSIO_USER_ID,
+      arguments: args,
+      dangerouslySkipVersionCheck: true,
+    })) as { successful?: boolean; data?: T; error?: string | null };
+  } catch (e) {
+    const rec = e as Record<string, unknown>;
+    const detail = JSON.stringify({
+      name: rec?.name,
+      message: rec?.message,
+      code: rec?.code,
+      status: rec?.status,
+      body: rec?.body,
+      response: rec?.response,
+      cause: rec?.cause,
+    }).slice(0, 800);
+    console.error(`[hubspot] SDK threw on ${slug}:`, detail);
+    throw new Error(`HubSpot ${slug} SDK error: ${detail}`);
+  }
   if (result?.successful === false) {
-    console.error(`[hubspot] ${slug} failed. Full result:`, JSON.stringify(result));
+    console.error(`[hubspot] ${slug} unsuccessful. Full result:`, JSON.stringify(result));
     throw new Error(`HubSpot ${slug} failed: ${result.error ?? 'unknown error'} | full=${JSON.stringify(result).slice(0, 400)}`);
   }
   return result?.data ?? ({} as T);
