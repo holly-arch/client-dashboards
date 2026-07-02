@@ -1,6 +1,6 @@
 'use client';
 
-export type DashboardTab = 'campaign' | 'roi' | 'hubspot';
+export type DashboardTab = 'campaign' | 'roi' | 'hubspot' | 'analytics';
 
 interface TabDef {
   value: DashboardTab;
