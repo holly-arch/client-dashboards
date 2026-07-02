@@ -207,7 +207,9 @@ export default function Dashboard() {
               return tabs.length > 1 ? <DashboardTabs selected={activeTab} onChange={setActiveTab} tabs={tabs} /> : null;
             })()}
           </div>
-          <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
+          {(activeTab === 'campaign' || activeTab === 'roi') && (
+            <TimeFilter selected={period} onChange={setPeriod} quarters={PTG_CLIENTS_WITH_QUARTERS.has(clientName) ? data.availableQuarters : undefined} />
+          )}
         </div>
 
         {activeTab === 'campaign' && (
