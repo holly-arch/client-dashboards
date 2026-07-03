@@ -20,6 +20,22 @@ export async function GET(request: Request) {
     }
 
     let raw = await fetchDashboardRawData();
+
+    // Temporary debug: ?debug=touchpoints returns the raw touchpoint rows so
+    // we can see the exact dates the sheet is providing.
+    if (searchParams.get('debug') === 'touchpoints') {
+      const now = new Date();
+      const day = now.getDay();
+      const diff = day === 0 ? 6 : day - 1;
+      const start = new Date();
+      start.setDate(now.getDate() - diff);
+      start.setHours(0, 0, 0, 0);
+      return NextResponse.json({
+        touchpointRows: raw.touchpointRows,
+        thisWeekStart: start.toISOString(),
+        now: now.toISOString(),
+      });
+    }
     // Rolling demo dates — opt-in either via CLIENT_NAME=Demo (legacy) or the
     // explicit IS_DEMO=true env var (so the displayed clientName can be a
     // fake brand like "Acme Corp" while still keeping the dates fresh).
