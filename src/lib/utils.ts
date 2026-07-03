@@ -261,20 +261,33 @@ export function buildDashboardData(
 
   // Filter and sum touchpoints if provided — only include channels that were
   // actually present on the sheet (some clients only track Calls, for example).
+  // Also hide the card entirely when the selected period starts BEFORE the
+  // earliest week we have touchpoint data for — otherwise a "This Year"-style
+  // filter would silently underreport by summing only the weeks that happen
+  // to be filled in and ignoring the un-tracked ones.
   let touchpoints: { calls?: number; linkedin?: number; email?: number } | undefined;
   if (touchpointRows && touchpointRows.length > 0) {
-    const filtered = touchpointRows.filter((t) => isInRange(t.week, range));
-    const channels: { calls?: number; linkedin?: number; email?: number } = {};
-    if (filtered.some((t) => t.calls !== undefined)) {
-      channels.calls = filtered.reduce((s, t) => s + (t.calls ?? 0), 0);
+    const weekTimes = touchpointRows
+      .map((t) => new Date(t.week).getTime())
+      .filter((n) => !isNaN(n));
+    const earliest = weekTimes.length > 0 ? Math.min(...weekTimes) : null;
+    const periodStartsBeforeData =
+      range !== null && earliest !== null && range.start.getTime() < earliest;
+
+    if (!periodStartsBeforeData) {
+      const filtered = touchpointRows.filter((t) => isInRange(t.week, range));
+      const channels: { calls?: number; linkedin?: number; email?: number } = {};
+      if (filtered.some((t) => t.calls !== undefined)) {
+        channels.calls = filtered.reduce((s, t) => s + (t.calls ?? 0), 0);
+      }
+      if (filtered.some((t) => t.linkedin !== undefined)) {
+        channels.linkedin = filtered.reduce((s, t) => s + (t.linkedin ?? 0), 0);
+      }
+      if (filtered.some((t) => t.email !== undefined)) {
+        channels.email = filtered.reduce((s, t) => s + (t.email ?? 0), 0);
+      }
+      if (Object.keys(channels).length > 0) touchpoints = channels;
     }
-    if (filtered.some((t) => t.linkedin !== undefined)) {
-      channels.linkedin = filtered.reduce((s, t) => s + (t.linkedin ?? 0), 0);
-    }
-    if (filtered.some((t) => t.email !== undefined)) {
-      channels.email = filtered.reduce((s, t) => s + (t.email ?? 0), 0);
-    }
-    if (Object.keys(channels).length > 0) touchpoints = channels;
   }
 
   // Available quarters derived from the unfiltered raw inputs so the filter list
