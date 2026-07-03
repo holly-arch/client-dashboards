@@ -261,21 +261,39 @@ export function buildDashboardData(
 
   // Filter and sum touchpoints if provided — only include channels that were
   // actually present on the sheet (some clients only track Calls, for example).
+  //
+  // A touchpoint row represents an entire 7-day span (Sun-Sat or Mon-Sun,
+  // whichever the client's sheet uses), not a single day. So a row "in range"
+  // is one whose 7-day span overlaps the selected period — not just one whose
+  // start date sits inside it. Without this, a Sunday-dated row for the
+  // current week gets excluded by This Week (starts Monday) and This Month
+  // (starts on the 1st) because the point comparison fails.
+  //
   // Also hide the card entirely when the selected period starts BEFORE the
-  // earliest week we have touchpoint data for — otherwise a "This Year"-style
-  // filter would silently underreport by summing only the weeks that happen
-  // to be filled in and ignoring the un-tracked ones.
+  // earliest week's END — otherwise a "This Year"-style filter would silently
+  // underreport by summing only the weeks that happen to be filled in and
+  // ignoring the un-tracked ones.
   let touchpoints: { calls?: number; linkedin?: number; email?: number } | undefined;
   if (touchpointRows && touchpointRows.length > 0) {
-    const weekTimes = touchpointRows
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const weekOverlapsRange = (weekIso: string): boolean => {
+      if (!range) return true;
+      if (!weekIso) return false;
+      const weekStart = new Date(weekIso).getTime();
+      if (isNaN(weekStart)) return false;
+      const weekEnd = weekStart + WEEK_MS;
+      return weekEnd > range.start.getTime() && weekStart <= range.end.getTime();
+    };
+
+    const weekStartTimes = touchpointRows
       .map((t) => new Date(t.week).getTime())
       .filter((n) => !isNaN(n));
-    const earliest = weekTimes.length > 0 ? Math.min(...weekTimes) : null;
+    const earliestWeekEnd = weekStartTimes.length > 0 ? Math.min(...weekStartTimes) + WEEK_MS : null;
     const periodStartsBeforeData =
-      range !== null && earliest !== null && range.start.getTime() < earliest;
+      range !== null && earliestWeekEnd !== null && range.start.getTime() < earliestWeekEnd - WEEK_MS;
 
     if (!periodStartsBeforeData) {
-      const filtered = touchpointRows.filter((t) => isInRange(t.week, range));
+      const filtered = touchpointRows.filter((t) => weekOverlapsRange(t.week));
       const channels: { calls?: number; linkedin?: number; email?: number } = {};
       if (filtered.some((t) => t.calls !== undefined)) {
         channels.calls = filtered.reduce((s, t) => s + (t.calls ?? 0), 0);
