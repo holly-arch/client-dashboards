@@ -205,6 +205,7 @@ const WEBINAR_COLUMN_MATCHERS: Record<string, string[]> = {
   lastName: ['last name', 'surname', 'lastname', 'second name', 'family name'],
   organisation: ['organisation', 'organization', 'company', 'company name', 'business', 'org'],
   jobTitle: ['job title', 'title', 'role', 'position'],
+  question: ['q&a', 'questions you', 'q and a', 'question for', 'question asked', 'question'],
 };
 
 const WARM_LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -573,12 +574,14 @@ export async function fetchDashboardRawData(
       const firstName = getVal(row, wCols.firstName);
       const lastName = getVal(row, wCols.lastName);
       if (!firstName && !lastName) continue;
+      const question = getVal(row, wCols.question);
       webinarRegistrants.push({
         id: `wr-${i}`,
         firstName,
         lastName,
         organisation: getVal(row, wCols.organisation),
         jobTitle: getVal(row, wCols.jobTitle),
+        ...(wCols.question !== undefined ? { question } : {}),
       });
     }
   }

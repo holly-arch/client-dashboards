@@ -105,6 +105,7 @@ export interface WebinarRegistrant {
   lastName: string;
   organisation: string;
   jobTitle: string;
+  question?: string;
 }
 
 export interface WarmLeadRecord {

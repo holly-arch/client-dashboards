@@ -9,6 +9,7 @@ interface WebinarRegistrantsSectionProps {
 export default function WebinarRegistrantsSection({ registrants }: WebinarRegistrantsSectionProps) {
   // Newest entries (bottom of sheet) shown first — mirrors WebsiteInbounds + WarmLeads.
   const ordered = [...registrants].reverse();
+  const hasQuestion = registrants.some((r) => r.question && r.question.trim());
 
   return (
     <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -25,20 +26,24 @@ export default function WebinarRegistrantsSection({ registrants }: WebinarRegist
               <th className="text-left py-2 pr-3 font-medium">First Name</th>
               <th className="text-left py-2 pr-3 font-medium">Last Name</th>
               <th className="text-left py-2 pr-3 font-medium">Organisation</th>
-              <th className="text-left py-2 font-medium">Job Title</th>
+              <th className="text-left py-2 pr-3 font-medium">Job Title</th>
+              {hasQuestion && <th className="text-left py-2 font-medium">Question Asked</th>}
             </tr>
           </thead>
           <tbody className="divide-subtle">
             {ordered.map((r) => (
-              <tr key={r.id} className="hover:bg-white/[0.03]">
+              <tr key={r.id} className="hover:bg-white/[0.03] align-top">
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{r.firstName || '—'}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{r.lastName || '—'}</td>
                 <td className="py-3 pr-3" style={{ color: '#fafafa' }}>{r.organisation || '—'}</td>
-                <td className="py-3" style={{ color: '#b0b0b0' }}>{r.jobTitle || '—'}</td>
+                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{r.jobTitle || '—'}</td>
+                {hasQuestion && (
+                  <td className="py-3 max-w-[360px] whitespace-pre-wrap break-words" style={{ color: '#888' }}>{r.question || '—'}</td>
+                )}
               </tr>
             ))}
             {ordered.length === 0 && (
-              <tr><td colSpan={4} className="py-8 text-center" style={{ color: '#555' }}>No registrants yet</td></tr>
+              <tr><td colSpan={hasQuestion ? 5 : 4} className="py-8 text-center" style={{ color: '#555' }}>No registrants yet</td></tr>
             )}
           </tbody>
         </table>
@@ -51,6 +56,11 @@ export default function WebinarRegistrantsSection({ registrants }: WebinarRegist
             <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{r.firstName} {r.lastName}</p>
             {r.organisation && <p className="text-xs mt-0.5" style={{ color: '#b0b0b0' }}>{r.organisation}</p>}
             {r.jobTitle && <p className="text-xs mt-0.5" style={{ color: '#888' }}>{r.jobTitle}</p>}
+            {r.question && r.question.trim() && (
+              <p className="text-xs mt-2 whitespace-pre-wrap break-words" style={{ color: '#888' }}>
+                <span style={{ color: '#666' }}>Q: </span>{r.question}
+              </p>
+            )}
           </div>
         ))}
         {ordered.length === 0 && (
