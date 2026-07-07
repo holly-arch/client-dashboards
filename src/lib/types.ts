@@ -126,6 +126,7 @@ export interface WebsiteInboundRecord {
   status: string; // 'Qualified' | 'Disqualified' | ''
   booked: string; // 'Yes' | 'No' | ''
   notes: string;
+  createDate?: string; // ISO timestamp, from the sheet's Create Date column
 }
 
 export interface DashboardData {

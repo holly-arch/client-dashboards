@@ -197,6 +197,7 @@ const INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
   status: ['status', 'qualified', 'qualification'],
   booked: ['booked?', 'booked', 'booking', 'meeting booked'],
   notes: ['notes', 'note'],
+  createDate: ['create date', 'created', 'date created', 'created at', 'created date', 'submitted at'],
 };
 
 const WEBINAR_COLUMN_MATCHERS: Record<string, string[]> = {
@@ -543,6 +544,8 @@ export async function fetchDashboardRawData(
       const email = getVal(row, iCols.email);
       // Skip blank rows
       if (!firstName && !lastName && !email) continue;
+      const createDateRaw = getVal(row, iCols.createDate);
+      const createDate = createDateRaw ? parseDate(createDateRaw) : null;
       websiteInbounds.push({
         id: `wi-${i}`,
         firstName,
@@ -551,6 +554,7 @@ export async function fetchDashboardRawData(
         status: getVal(row, iCols.status),
         booked: getVal(row, iCols.booked),
         notes: getVal(row, iCols.notes),
+        ...(createDate ? { createDate } : {}),
       });
     }
   }

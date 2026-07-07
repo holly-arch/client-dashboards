@@ -55,12 +55,28 @@ function MiniKpi({ label, value, color }: MiniKpiProps) {
   );
 }
 
+function formatCreateDate(iso: string | undefined): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+  // Skip the time when it landed at midnight — usually means the sheet only had a date.
+  return time === '00:00' ? date : `${date}, ${time}`;
+}
+
 export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSectionProps) {
-  // Newest entries (bottom of sheet) shown first
-  const orderedInbounds = [...inbounds].reverse();
+  // Sort newest first when Create Date is present on every row; otherwise fall
+  // back to reversing sheet order (newer rows are appended to the bottom).
+  const allHaveDate = inbounds.length > 0 && inbounds.every((i) => i.createDate);
+  const orderedInbounds = allHaveDate
+    ? [...inbounds].sort((a, b) => (b.createDate ?? '').localeCompare(a.createDate ?? ''))
+    : [...inbounds].reverse();
+
   const total = inbounds.length;
   const qualified = inbounds.filter((i) => i.status.toLowerCase() === 'qualified').length;
   const booked = inbounds.filter((i) => i.booked.toLowerCase() === 'yes').length;
+  const hasDate = inbounds.some((i) => i.createDate);
 
   return (
     <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -80,6 +96,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+              {hasDate && <th className="text-left py-2 pr-3 font-medium whitespace-nowrap">Date</th>}
               <th className="text-left py-2 pr-3 font-medium">First Name</th>
               <th className="text-left py-2 pr-3 font-medium">Last Name</th>
               <th className="text-left py-2 pr-3 font-medium">Email</th>
@@ -91,6 +108,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
           <tbody className="divide-subtle">
             {orderedInbounds.map((i) => (
               <tr key={i.id} className="hover:bg-white/[0.03] align-top">
+                {hasDate && <td className="py-3 pr-3 whitespace-nowrap tabular-nums" style={{ color: '#888' }}>{formatCreateDate(i.createDate)}</td>}
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{i.firstName}</td>
                 <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{i.lastName}</td>
                 <td className="py-3 pr-3 truncate max-w-[260px]" style={{ color: '#b0b0b0' }}>
@@ -103,7 +121,7 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
             ))}
             {inbounds.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-8 text-center" style={{ color: '#555' }}>No website inbounds yet</td>
+                <td colSpan={hasDate ? 7 : 6} className="py-8 text-center" style={{ color: '#555' }}>No website inbounds yet</td>
               </tr>
             )}
           </tbody>
@@ -114,7 +132,10 @@ export default function WebsiteInboundsSection({ inbounds }: WebsiteInboundsSect
       <div className="md:hidden space-y-3">
         {orderedInbounds.map((i) => (
           <div key={i.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
-            <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{i.firstName} {i.lastName}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{i.firstName} {i.lastName}</p>
+              {hasDate && <p className="text-xs whitespace-nowrap tabular-nums" style={{ color: '#666' }}>{formatCreateDate(i.createDate)}</p>}
+            </div>
             {i.email && (
               <p className="text-xs truncate mt-1" style={{ color: '#b0b0b0' }}>
                 <a href={`mailto:${i.email}`} className="hover:underline">{i.email}</a>
