@@ -20,16 +20,6 @@ export async function GET(request: Request) {
     }
 
     let raw = await fetchDashboardRawData();
-
-    if (searchParams.get('debug') === 'webinar') {
-      const { fetchSheet } = await import('@/lib/sheets-api');
-      const sheetId = process.env.WEBINAR_SHEET_ID;
-      const tab = process.env.WEBINAR_TAB || 'Sheet1';
-      if (!sheetId) return NextResponse.json({ error: 'No WEBINAR_SHEET_ID' });
-      const rows = await fetchSheet(sheetId, tab);
-      const withQ7 = rows.map((r, i) => ({ i, first: r[1], last: r[2], q7: r[7], q8: r[8] })).filter((r) => (r.q7 && r.q7.trim()) || (r.q8 && r.q8.trim()));
-      return NextResponse.json({ totalRows: rows.length, rowsWithQuestion: withQ7 });
-    }
     // Rolling demo dates — opt-in either via CLIENT_NAME=Demo (legacy) or the
     // explicit IS_DEMO=true env var (so the displayed clientName can be a
     // fake brand like "Acme Corp" while still keeping the dates fresh).

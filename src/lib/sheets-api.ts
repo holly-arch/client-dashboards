@@ -566,22 +566,38 @@ export async function fetchDashboardRawData(
   // before the actual data. The detectColumns matcher reads row 0 and locates
   // the real headers by name; per-row we skip anything without a first or last
   // name so the summary rows don't render as registrants.
+  //
+  // Zoom quirk: the "Please let us know any questions..." Q&A field appears
+  // TWICE in the header row (columns 7 and 8) with identical labels, but data
+  // only lands in the second one. detectColumns returns the first index it
+  // finds, so we build a full list of indexes matching the question aliases
+  // and, per row, use whichever has content.
   const webinarRegistrants: WebinarRegistrant[] = [];
   if (webinarRows.length > 1) {
     const wCols = detectColumns(webinarRows[0], WEBINAR_COLUMN_MATCHERS);
+    const headers = webinarRows[0].map((h) => h.toLowerCase().trim());
+    const questionAliases = WEBINAR_COLUMN_MATCHERS.question ?? [];
+    const questionIndexes: number[] = [];
+    headers.forEach((h, idx) => {
+      if (questionAliases.some((alias) => h.includes(alias))) questionIndexes.push(idx);
+    });
     for (let i = 1; i < webinarRows.length; i++) {
       const row = webinarRows[i];
       const firstName = getVal(row, wCols.firstName);
       const lastName = getVal(row, wCols.lastName);
       if (!firstName && !lastName) continue;
-      const question = getVal(row, wCols.question);
+      let question = '';
+      for (const idx of questionIndexes) {
+        const v = getVal(row, idx);
+        if (v) { question = v; break; }
+      }
       webinarRegistrants.push({
         id: `wr-${i}`,
         firstName,
         lastName,
         organisation: getVal(row, wCols.organisation),
         jobTitle: getVal(row, wCols.jobTitle),
-        ...(wCols.question !== undefined ? { question } : {}),
+        ...(questionIndexes.length > 0 ? { question } : {}),
       });
     }
   }
