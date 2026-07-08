@@ -76,13 +76,25 @@ async function runReport(args: Record<string, unknown>): Promise<GaReportRespons
   // is true (their guard against silently picking up breaking toolkit changes). The response
   // shape we parse is Google's GA4 Data API, not Composio's wrapper schema, so the skip is
   // genuinely safe here — we'd be insulated even if Composio re-released the toolkit.
-  const result = (await composio.tools.execute('GOOGLE_ANALYTICS_RUN_REPORT', {
-    userId: composioUserId(),
-    arguments: args,
-    dangerouslySkipVersionCheck: true,
-  })) as { successful?: boolean; data?: GaReportResponse; error?: string | null };
+  let result: { successful?: boolean; data?: GaReportResponse; error?: string | null };
+  try {
+    result = (await composio.tools.execute('GOOGLE_ANALYTICS_RUN_REPORT', {
+      userId: composioUserId(),
+      arguments: args,
+      dangerouslySkipVersionCheck: true,
+    })) as { successful?: boolean; data?: GaReportResponse; error?: string | null };
+  } catch (e) {
+    const rec = e as Record<string, unknown>;
+    const detail = JSON.stringify({
+      name: rec?.name,
+      message: rec?.message,
+      code: rec?.code,
+      cause: rec?.cause,
+    }).slice(0, 600);
+    throw new Error(`GA SDK error: ${detail}`);
+  }
   if (result?.successful === false) {
-    throw new Error(`GA RunReport failed: ${result.error ?? 'unknown error'}`);
+    throw new Error(`GA RunReport failed: ${result.error ?? 'unknown error'} | full=${JSON.stringify(result).slice(0, 300)}`);
   }
   return result?.data ?? {};
 }
