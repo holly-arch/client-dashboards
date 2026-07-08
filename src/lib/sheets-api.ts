@@ -503,13 +503,22 @@ export async function fetchDashboardRawData(
   // Sort meetings by Date Booked (most recent first)
   meetings.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime());
 
-  // Sort leads: Closed/Lost at bottom, then by date (most recent first)
+  // Sort leads: Closed/Lost at bottom, then by date (most recent first).
+  // Missing / unparseable dates sink to the bottom of their bucket — otherwise
+  // `new Date('').getTime() === NaN` and any comparison involving that NaN
+  // returns NaN, which JS's sort treats inconsistently and can split the list
+  // into two independently-sorted blocks around the offending row.
   const closedStatuses = new Set(['closed/lost', 'closed lost', 'lost']);
+  const dateTime = (s: string): number => {
+    if (!s) return -Infinity;
+    const t = new Date(s).getTime();
+    return isNaN(t) ? -Infinity : t;
+  };
   leads.sort((a, b) => {
     const aIsClosed = closedStatuses.has(a.status.toLowerCase()) ? 1 : 0;
     const bIsClosed = closedStatuses.has(b.status.toLowerCase()) ? 1 : 0;
     if (aIsClosed !== bIsClosed) return aIsClosed - bIsClosed;
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+    return dateTime(b.date) - dateTime(a.date);
   });
 
   // --- Process Touchpoints ---
