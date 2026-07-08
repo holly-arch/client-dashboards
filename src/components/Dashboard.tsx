@@ -100,6 +100,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clientName, setClientName] = useState('Client');
+  const [hasAnalytics, setHasAnalytics] = useState(false);
 
   // Check auth on mount. Cookie first (survives Safari's 7-day ITP wipe),
   // then localStorage fallback (which re-POSTs to refresh the cookie so the
@@ -127,7 +128,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetch('/api/config')
       .then((res) => res.json())
-      .then((cfg) => setClientName(cfg.clientName))
+      .then((cfg) => {
+        setClientName(cfg.clientName);
+        setHasAnalytics(!!cfg.hasAnalytics);
+      })
       .catch(() => {});
   }, []);
 
@@ -203,7 +207,7 @@ export default function Dashboard() {
               const tabs: { value: DashboardTab; label: string }[] = [{ value: 'campaign', label: 'Campaign' }];
               if (data.roi) tabs.push({ value: 'roi', label: 'ROI' });
               if (clientName === 'myBasePay') tabs.push({ value: 'hubspot', label: 'HubSpot' });
-              if (clientName === 'myBasePay') tabs.push({ value: 'analytics', label: 'Analytics' });
+              if (hasAnalytics) tabs.push({ value: 'analytics', label: 'Analytics' });
               return tabs.length > 1 ? <DashboardTabs selected={activeTab} onChange={setActiveTab} tabs={tabs} /> : null;
             })()}
           </div>
@@ -239,7 +243,7 @@ export default function Dashboard() {
 
         {activeTab === 'hubspot' && clientName === 'myBasePay' && <HubSpotSection />}
 
-        {activeTab === 'analytics' && clientName === 'myBasePay' && <GoogleAnalyticsCard />}
+        {activeTab === 'analytics' && hasAnalytics && <GoogleAnalyticsCard />}
 
         {activeTab === 'roi' && data.roi && (() => {
           const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);

@@ -2,11 +2,17 @@ import { NextResponse } from 'next/server';
 import { fetchAnalytics } from '@/lib/ga-api';
 
 const ALLOWED_RANGES = new Set(['7d', '30d', '90d']);
-const ALLOWED_CLIENTS = new Set(['myBasePay']);
+
+// Enabled for any client whose deployment has BOTH env vars set. Any new
+// client just needs COMPOSIO_API_KEY + GA4_PROPERTY_ID on Vercel + a
+// Composio 'user' connection matching the CLIENT_NAME (or an explicit
+// COMPOSIO_USER_ID override).
+function analyticsEnabled(): boolean {
+  return !!(process.env.COMPOSIO_API_KEY && process.env.GA4_PROPERTY_ID);
+}
 
 export async function GET(request: Request) {
-  const clientName = process.env.CLIENT_NAME ?? '';
-  if (!ALLOWED_CLIENTS.has(clientName)) {
+  if (!analyticsEnabled()) {
     return NextResponse.json({ error: 'Not enabled for this dashboard' }, { status: 404 });
   }
 

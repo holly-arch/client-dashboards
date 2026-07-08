@@ -1,6 +1,15 @@
 import { Composio } from '@composio/core';
 
-const COMPOSIO_USER_ID = 'mybasepay';
+// Composio user ID for GA lookups. Prefers an explicit COMPOSIO_USER_ID env
+// var, otherwise derives from CLIENT_NAME (lowercased, spaces stripped) so a
+// new client can be wired up with just CLIENT_NAME + GA4_PROPERTY_ID env vars.
+function composioUserId(): string {
+  const explicit = process.env.COMPOSIO_USER_ID;
+  if (explicit) return explicit;
+  const derived = (process.env.CLIENT_NAME || '').toLowerCase().replace(/\s+/g, '');
+  if (!derived) throw new Error('CLIENT_NAME must be set to derive Composio user ID');
+  return derived;
+}
 
 type GaDateRange = '7d' | '30d' | '90d';
 
@@ -68,7 +77,7 @@ async function runReport(args: Record<string, unknown>): Promise<GaReportRespons
   // shape we parse is Google's GA4 Data API, not Composio's wrapper schema, so the skip is
   // genuinely safe here — we'd be insulated even if Composio re-released the toolkit.
   const result = (await composio.tools.execute('GOOGLE_ANALYTICS_RUN_REPORT', {
-    userId: COMPOSIO_USER_ID,
+    userId: composioUserId(),
     arguments: args,
     dangerouslySkipVersionCheck: true,
   })) as { successful?: boolean; data?: GaReportResponse; error?: string | null };
