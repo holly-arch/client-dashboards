@@ -340,6 +340,23 @@ async function getOwners(): Promise<Map<string, string>> {
   }
 }
 
+async function searchContactByName(firstName: string, lastName: string): Promise<HubSpotContactRaw | null> {
+  const search = await execute<HubSpotContactsSearchResponse>(
+    'HUBSPOT_SEARCH_CONTACTS_BY_CRITERIA',
+    {
+      filterGroups: [{
+        filters: [
+          { propertyName: 'firstname', operator: 'EQ', value: firstName },
+          { propertyName: 'lastname', operator: 'EQ', value: lastName },
+        ],
+      }],
+      properties: ['firstname', 'lastname', 'hubspot_owner_id', 'notes_last_contacted'],
+      limit: 1,
+    }
+  );
+  return search.results?.[0] ?? null;
+}
+
 export async function fetchMeetingEnrichment(
   names: { firstName: string; lastName: string }[]
 ): Promise<Map<string, MeetingEnrichment>> {
@@ -360,21 +377,21 @@ export async function fetchMeetingEnrichment(
     }
 
     try {
-      const search = await execute<HubSpotContactsSearchResponse>(
-        'HUBSPOT_SEARCH_CONTACTS_BY_CRITERIA',
-        {
-          filterGroups: [{
-            filters: [
-              { propertyName: 'firstname', operator: 'EQ', value: firstName },
-              { propertyName: 'lastname', operator: 'EQ', value: lastName },
-            ],
-          }],
-          properties: ['firstname', 'lastname', 'hubspot_owner_id', 'notes_last_contacted'],
-          limit: 1,
-        }
-      );
+      // First: exact match on the split we've got.
+      let contact = await searchContactByName(firstName, lastName);
 
-      const contact = search.results?.[0];
+      // Fallback: three-plus-word names. "Kaden Avery Elliot" splits to
+      // firstName=Kaden, lastName='Avery Elliot' — HubSpot often stores that
+      // person as firstName=Kaden, lastName=Elliot (surname only). Retry with
+      // just the last word.
+      if (!contact) {
+        const surnameParts = lastName.trim().split(/\s+/);
+        if (surnameParts.length > 1) {
+          const lastWordOnly = surnameParts[surnameParts.length - 1];
+          contact = await searchContactByName(firstName, lastWordOnly);
+        }
+      }
+
       if (!contact) {
         enrichmentCache.set(key, { data: {}, expires: now + ENRICH_TTL_MS });
         return;
