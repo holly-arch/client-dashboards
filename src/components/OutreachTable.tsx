@@ -83,7 +83,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
                       target="_blank"
                       rel="noopener noreferrer"
                       className="hover:underline"
-                      style={{ color: '#ff2eeb' }}
+                      style={{ color: 'inherit' }}
                     >
                       {m.contactName}
                     </a>
@@ -133,7 +133,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             </div>
             <p className="text-sm" style={{ color: '#b0b0b0' }}>
               {m.hubspotContactUrl ? (
-                <a href={m.hubspotContactUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#ff2eeb' }}>
+                <a href={m.hubspotContactUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: 'inherit' }}>
                   {m.contactName}
                 </a>
               ) : (

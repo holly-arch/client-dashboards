@@ -357,6 +357,20 @@ async function searchContactByName(firstName: string, lastName: string): Promise
   return search.results?.[0] ?? null;
 }
 
+// Strip suffixes (II, III, IV, Jr, Sr, PhD, Esq...) and single-letter tokens
+// with optional trailing period (middle initials like "L." or "J.") from a
+// tokenised name. Returns the remaining name tokens.
+const SUFFIXES = new Set(['ii', 'iii', 'iv', 'v', 'jr', 'jr.', 'sr', 'sr.', 'phd', 'ph.d.', 'esq', 'esq.', 'md', 'm.d.']);
+function stripSuffixesAndInitials(tokens: string[]): string[] {
+  return tokens.filter((t) => {
+    const lower = t.toLowerCase();
+    if (SUFFIXES.has(lower)) return false;
+    // Single letter, optionally with a period — middle initial.
+    if (/^[a-z]\.?$/i.test(t)) return false;
+    return true;
+  });
+}
+
 export async function fetchMeetingEnrichment(
   names: { firstName: string; lastName: string }[]
 ): Promise<Map<string, MeetingEnrichment>> {
@@ -377,18 +391,24 @@ export async function fetchMeetingEnrichment(
     }
 
     try {
-      // First: exact match on the split we've got.
+      // Tier 1: exact match on the split we've got.
       let contact = await searchContactByName(firstName, lastName);
 
-      // Fallback: three-plus-word names. "Kaden Avery Elliot" splits to
-      // firstName=Kaden, lastName='Avery Elliot' — HubSpot often stores that
-      // person as firstName=Kaden, lastName=Elliot (surname only). Retry with
-      // just the last word.
+      // Tier 2: normalise — strip suffixes (II, III, Jr...) and single-letter
+      // middle initials, then retake first/last word. Handles:
+      //   "George Robinson II"   → George Robinson
+      //   "Austin L. Rowan"      → Austin Rowan
+      //   "Jami J. Rodgers"      → Jami Rodgers
+      //   "Kaden Avery Elliot"   → Kaden Elliot (last word)
       if (!contact) {
-        const surnameParts = lastName.trim().split(/\s+/);
-        if (surnameParts.length > 1) {
-          const lastWordOnly = surnameParts[surnameParts.length - 1];
-          contact = await searchContactByName(firstName, lastWordOnly);
+        const allTokens = `${firstName} ${lastName}`.trim().split(/\s+/);
+        const cleaned = stripSuffixesAndInitials(allTokens);
+        if (cleaned.length >= 2) {
+          const cleanFirst = cleaned[0];
+          const cleanLast = cleaned[cleaned.length - 1];
+          if (cleanFirst.toLowerCase() !== firstName.toLowerCase() || cleanLast.toLowerCase() !== lastName.toLowerCase()) {
+            contact = await searchContactByName(cleanFirst, cleanLast);
+          }
         }
       }
 
