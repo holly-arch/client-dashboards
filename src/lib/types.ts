@@ -22,6 +22,13 @@ export interface MeetingRecord {
   fleetSize?: number;
   source?: string;
   channel?: string;
+  bookedWith?: string;
+  // Populated only when the deployment has HubSpot wired up (currently
+  // myBasePay). Enrichment is best-effort — any of these can be undefined
+  // if the contact wasn't matched in HubSpot.
+  hubspotContactUrl?: string;
+  hubspotOwner?: string;
+  lastContactedIso?: string;
 }
 
 export interface LeadRecord {

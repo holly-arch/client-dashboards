@@ -26,6 +26,19 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
   const hasSource = SOURCE_CLIENTS.has(clientName ?? '') && meetings.some((m) => m.source !== undefined);
   const hasChannel = CHANNEL_CLIENTS.has(clientName ?? '') && meetings.some((m) => m.channel !== undefined);
   const showMeetingDate = clientName === 'Jua' || clientName === 'Tower Supplies';
+  // HubSpot-enriched columns — currently gated to myBasePay (the only client
+  // wired up to HubSpot via Composio). Rendered only when the data landed.
+  const isHubspotClient = clientName === 'myBasePay';
+  const hasBookedWith = isHubspotClient && meetings.some((m) => m.bookedWith);
+  const hasOwner = isHubspotClient && meetings.some((m) => m.hubspotOwner);
+  const hasLastContacted = isHubspotClient && meetings.some((m) => m.lastContactedIso);
+
+  const formatLastContacted = (iso: string | undefined): string => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+  };
 
   return (
     <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: '#141414', border: '1px solid #252525' }}>
@@ -45,6 +58,9 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
+              {hasOwner && <th className="text-left py-2 pr-3 font-medium">Owner</th>}
+              {hasBookedWith && <th className="text-left py-2 pr-3 font-medium">Booked With</th>}
+              {hasLastContacted && <th className="text-left py-2 pr-3 font-medium whitespace-nowrap">Last Contacted</th>}
               {hasIndustry && <th className="text-left py-2 pr-3 font-medium">Industry</th>}
               {hasFleetSize && <th className="text-right py-2 pr-3 font-medium">Fleet Size</th>}
               <th className="text-left py-2 pr-3 font-medium">Date Booked</th>
@@ -60,8 +76,25 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             {meetings.map((m) => (
               <tr key={m.id} className="hover:bg-white/[0.03]">
                 <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{m.company}</td>
-                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{m.contactName}</td>
+                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>
+                  {m.hubspotContactUrl ? (
+                    <a
+                      href={m.hubspotContactUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                      style={{ color: '#ff2eeb' }}
+                    >
+                      {m.contactName}
+                    </a>
+                  ) : (
+                    m.contactName
+                  )}
+                </td>
                 <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{m.contactTitle}</td>
+                {hasOwner && <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{m.hubspotOwner || '—'}</td>}
+                {hasBookedWith && <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{m.bookedWith || '—'}</td>}
+                {hasLastContacted && <td className="py-3 pr-3 whitespace-nowrap tabular-nums" style={{ color: '#888' }}>{formatLastContacted(m.lastContactedIso)}</td>}
                 {hasIndustry && <td className="py-3 pr-3" style={{ color: '#888' }}>{m.industry || '—'}</td>}
                 {hasFleetSize && <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#888' }}>{m.fleetSize !== undefined ? m.fleetSize.toLocaleString('en-GB') : '—'}</td>}
                 <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(m.dateCreated)}</td>
@@ -83,7 +116,7 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
             ))}
             {meetings.length === 0 && (
               <tr>
-                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasIndustry ? 1 : 0) + (hasFleetSize ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
+                <td colSpan={5 + (showMeetingDate ? 1 : 0) + (hasIndustry ? 1 : 0) + (hasFleetSize ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasShortStatus ? 1 : 0) + (hasPartnerStatus ? 1 : 0) + (hasOwner ? 1 : 0) + (hasBookedWith ? 1 : 0) + (hasLastContacted ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No meetings found</td>
               </tr>
             )}
           </tbody>
@@ -98,8 +131,19 @@ export default function OutreachTable({ meetings, onRefresh, clientName }: Outre
               <span className="font-medium text-sm" style={{ color: '#fafafa' }}>{m.company}</span>
               <StatusBadge status={m.subStatus} />
             </div>
-            <p className="text-sm" style={{ color: '#b0b0b0' }}>{m.contactName}</p>
+            <p className="text-sm" style={{ color: '#b0b0b0' }}>
+              {m.hubspotContactUrl ? (
+                <a href={m.hubspotContactUrl} target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#ff2eeb' }}>
+                  {m.contactName}
+                </a>
+              ) : (
+                m.contactName
+              )}
+            </p>
             <p className="text-xs truncate" style={{ color: '#888' }}>{m.contactTitle}</p>
+            {hasOwner && m.hubspotOwner && <p className="text-xs" style={{ color: '#888' }}>Owner: {m.hubspotOwner}</p>}
+            {hasBookedWith && m.bookedWith && <p className="text-xs" style={{ color: '#888' }}>Booked with: {m.bookedWith}</p>}
+            {hasLastContacted && m.lastContactedIso && <p className="text-xs" style={{ color: '#888' }}>Last contacted: {formatLastContacted(m.lastContactedIso)}</p>}
             {hasIndustry && m.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {m.industry}</p>}
             {hasFleetSize && m.fleetSize !== undefined && <p className="text-xs" style={{ color: '#888' }}>Fleet size: {m.fleetSize.toLocaleString('en-GB')}</p>}
             {hasChannel && m.channel && <p className="text-xs" style={{ color: '#888' }}>Channel: {m.channel}</p>}

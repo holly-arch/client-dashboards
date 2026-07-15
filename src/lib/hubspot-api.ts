@@ -274,3 +274,128 @@ export async function fetchHubSpotData(): Promise<HubSpotData> {
     truncated: dealsResult.truncated,
   };
 }
+
+// --- Meeting enrichment ---
+// Looks up each meeting's contact in HubSpot by first+last name and returns
+// the record URL, owner name, and last-contacted timestamp. Best-effort:
+// unmatched contacts silently return no enrichment; HubSpot errors don't
+// block the main dashboard response. Cached in-memory so 90s dashboard
+// polling doesn't hammer HubSpot.
+
+export interface MeetingEnrichment {
+  contactUrl?: string;
+  owner?: string;
+  lastContactedIso?: string;
+}
+
+interface HubSpotContactRaw {
+  id: string;
+  url?: string;
+  properties: {
+    firstname?: string;
+    lastname?: string;
+    hubspot_owner_id?: string;
+    notes_last_contacted?: string;
+  };
+}
+
+interface HubSpotContactsSearchResponse {
+  results?: HubSpotContactRaw[];
+  total?: number;
+}
+
+interface HubSpotOwnerRaw {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+interface HubSpotOwnersResponse {
+  results?: HubSpotOwnerRaw[];
+}
+
+const OWNERS_TTL_MS = 60 * 60 * 1000;      // 1h
+const ENRICH_TTL_MS = 5 * 60 * 1000;       // 5m
+const ENRICH_ERROR_TTL_MS = 60 * 1000;     // 1m — retry sooner on failure
+
+let ownersCache: { data: Map<string, string>; expires: number } | null = null;
+const enrichmentCache = new Map<string, { data: MeetingEnrichment; expires: number }>();
+
+async function getOwners(): Promise<Map<string, string>> {
+  if (ownersCache && ownersCache.expires > Date.now()) return ownersCache.data;
+  try {
+    const data = await execute<HubSpotOwnersResponse>('HUBSPOT_RETRIEVE_OWNERS', {});
+    const map = new Map<string, string>();
+    for (const o of data.results ?? []) {
+      const name = `${o.firstName ?? ''} ${o.lastName ?? ''}`.trim() || o.email || '';
+      if (name) map.set(o.id, name);
+    }
+    ownersCache = { data: map, expires: Date.now() + OWNERS_TTL_MS };
+    return map;
+  } catch (e) {
+    console.error('[hubspot] getOwners failed:', e instanceof Error ? e.message : e);
+    // Empty map means "no owner names available" — enrichment still returns URLs.
+    return new Map();
+  }
+}
+
+export async function fetchMeetingEnrichment(
+  names: { firstName: string; lastName: string }[]
+): Promise<Map<string, MeetingEnrichment>> {
+  const out = new Map<string, MeetingEnrichment>();
+  if (names.length === 0) return out;
+
+  const owners = await getOwners();
+  const now = Date.now();
+
+  await Promise.all(names.map(async ({ firstName, lastName }) => {
+    if (!firstName || !lastName) return;
+    const key = `${firstName.toLowerCase()} ${lastName.toLowerCase()}`;
+
+    const cached = enrichmentCache.get(key);
+    if (cached && cached.expires > now) {
+      if (Object.keys(cached.data).length > 0) out.set(key, cached.data);
+      return;
+    }
+
+    try {
+      const search = await execute<HubSpotContactsSearchResponse>(
+        'HUBSPOT_SEARCH_CONTACTS_BY_CRITERIA',
+        {
+          filterGroups: [{
+            filters: [
+              { propertyName: 'firstname', operator: 'EQ', value: firstName },
+              { propertyName: 'lastname', operator: 'EQ', value: lastName },
+            ],
+          }],
+          properties: ['firstname', 'lastname', 'hubspot_owner_id', 'notes_last_contacted'],
+          limit: 1,
+        }
+      );
+
+      const contact = search.results?.[0];
+      if (!contact) {
+        enrichmentCache.set(key, { data: {}, expires: now + ENRICH_TTL_MS });
+        return;
+      }
+
+      const enrichment: MeetingEnrichment = {};
+      if (contact.url) enrichment.contactUrl = contact.url;
+      const ownerId = contact.properties.hubspot_owner_id;
+      if (ownerId && owners.has(ownerId)) enrichment.owner = owners.get(ownerId);
+      if (contact.properties.notes_last_contacted) {
+        enrichment.lastContactedIso = contact.properties.notes_last_contacted;
+      }
+
+      enrichmentCache.set(key, { data: enrichment, expires: now + ENRICH_TTL_MS });
+      if (Object.keys(enrichment).length > 0) out.set(key, enrichment);
+    } catch (e) {
+      console.error(`[hubspot] enrichment failed for ${key}:`, e instanceof Error ? e.message : e);
+      enrichmentCache.set(key, { data: {}, expires: now + ENRICH_ERROR_TTL_MS });
+    }
+  }));
+
+  return out;
+}
+
