@@ -38,6 +38,7 @@ export async function GET(request: Request) {
       raw.roiOpportunities,
       raw.warmLeads,
       raw.webinarRegistrants,
+      raw.lytxInbounds,
     );
 
     // Best-effort HubSpot enrichment of meetings for clients with the

@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, WebinarRegistrant, RoiEntry, RoiOpportunity } from './types';
+import { MeetingRecord, LeadRecord, TouchpointRow, WebsiteInboundRecord, WarmLeadRecord, WebinarRegistrant, LytxInboundRecord, RoiEntry, RoiOpportunity } from './types';
 
 // --- Google Sheets Auth (JWT / Service Account) ---
 
@@ -209,6 +209,16 @@ const WEBINAR_COLUMN_MATCHERS: Record<string, string[]> = {
   question: ['q&a', 'questions you', 'q and a', 'question for', 'question asked', 'question'],
 };
 
+const LYTX_INBOUND_COLUMN_MATCHERS: Record<string, string[]> = {
+  createDate: ['created date', 'create date', 'created', 'date created', 'submitted at'],
+  firstName: ['first name', 'firstname', 'first', 'forename'],
+  lastName: ['last name', 'surname', 'lastname', 'second name', 'family name'],
+  accountName: ['account name', 'account', 'company name', 'company', 'organisation', 'organization', 'business'],
+  orrjoContact: ['orrjo contact', 'contact', 'assigned to', 'owner'],
+  orrjoStatus: ['orrjo status', 'status'],
+  orrjoNotes: ['orrjo notes', 'notes', 'note'],
+};
+
 const WARM_LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
   firstName: ['first name', 'firstname', 'first', 'forename'],
   surname: ['surname', 'last name', 'lastname', 'second name', 'family name'],
@@ -355,6 +365,7 @@ export async function fetchDashboardRawData(
   websiteInbounds: WebsiteInboundRecord[];
   warmLeads: WarmLeadRecord[];
   webinarRegistrants: WebinarRegistrant[];
+  lytxInbounds: LytxInboundRecord[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -374,7 +385,12 @@ export async function fetchDashboardRawData(
   const webinarSheetId = process.env.WEBINAR_SHEET_ID;
   const webinarTab = process.env.WEBINAR_TAB || 'Sheet1';
 
-  const [meetingRows, leadRows, touchpointRows, inboundRows, warmLeadRows, webinarRows, roiResult] = await Promise.all([
+  // Lytx-only "Inbounds" tracker (separate sheet pointed at by
+  // LYTX_INBOUNDS_SHEET_ID; tab defaults to 'ALL INBOUNDS').
+  const lytxInboundsSheetId = process.env.LYTX_INBOUNDS_SHEET_ID;
+  const lytxInboundsTab = process.env.LYTX_INBOUNDS_TAB || 'ALL INBOUNDS';
+
+  const [meetingRows, leadRows, touchpointRows, inboundRows, warmLeadRows, webinarRows, roiResult, lytxInboundRows] = await Promise.all([
     fetchSheet(sheetId, meetingsTab),
     fetchSheet(sheetId, leadsTab),
     fetchSheet(sheetId, 'Touchpoints').catch(() => [] as string[][]),
@@ -382,6 +398,7 @@ export async function fetchDashboardRawData(
     fetchSheet(sheetId, 'Warm Leads').catch(() => [] as string[][]),
     webinarSheetId ? fetchSheet(webinarSheetId, webinarTab).catch(() => [] as string[][]) : Promise.resolve([] as string[][]),
     fetchSheet(sheetId, 'ROI').then((rows) => ({ rows, exists: true })).catch(() => ({ rows: [] as string[][], exists: false })),
+    lytxInboundsSheetId ? fetchSheet(lytxInboundsSheetId, lytxInboundsTab).catch(() => [] as string[][]) : Promise.resolve([] as string[][]),
   ]);
 
   // --- Process Meetings ---
@@ -733,6 +750,32 @@ export async function fetchDashboardRawData(
     }
   }
 
+  // --- Process Lytx Inbounds ---
+  // Optional — only fetched when LYTX_INBOUNDS_SHEET_ID is set. Separate sheet.
+  const lytxInbounds: LytxInboundRecord[] = [];
+  if (lytxInboundRows.length > 1) {
+    const lCols = detectColumns(lytxInboundRows[0], LYTX_INBOUND_COLUMN_MATCHERS);
+    for (let i = 1; i < lytxInboundRows.length; i++) {
+      const row = lytxInboundRows[i];
+      const firstName = getVal(row, lCols.firstName);
+      const lastName = getVal(row, lCols.lastName);
+      const accountName = getVal(row, lCols.accountName);
+      if (!firstName && !lastName && !accountName) continue;
+      const createDateRaw = getVal(row, lCols.createDate);
+      const createDate = createDateRaw ? parseDate(createDateRaw) : null;
+      lytxInbounds.push({
+        id: `li-${i}`,
+        firstName,
+        lastName,
+        accountName,
+        orrjoContact: getVal(row, lCols.orrjoContact),
+        orrjoStatus: getVal(row, lCols.orrjoStatus),
+        orrjoNotes: getVal(row, lCols.orrjoNotes),
+        ...(createDate ? { createDate } : {}),
+      });
+    }
+  }
+
   return {
     meetings,
     leads,
@@ -740,6 +783,7 @@ export async function fetchDashboardRawData(
     websiteInbounds,
     warmLeads,
     webinarRegistrants,
+    lytxInbounds,
     roiEntries,
     roiOpportunities,
     hasRoiTab,
@@ -756,6 +800,7 @@ export function shiftDatesToToday(raw: {
   websiteInbounds: WebsiteInboundRecord[];
   warmLeads: WarmLeadRecord[];
   webinarRegistrants: WebinarRegistrant[];
+  lytxInbounds: LytxInboundRecord[];
   roiEntries: RoiEntry[];
   roiOpportunities: RoiOpportunity[];
   hasRoiTab: boolean;
@@ -806,6 +851,7 @@ export function shiftDatesToToday(raw: {
     websiteInbounds: raw.websiteInbounds,
     warmLeads: raw.warmLeads,
     webinarRegistrants: raw.webinarRegistrants,
+    lytxInbounds: raw.lytxInbounds,
     roiEntries: raw.roiEntries,
     roiOpportunities: raw.roiOpportunities,
     hasRoiTab: raw.hasRoiTab,

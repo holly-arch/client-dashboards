@@ -14,6 +14,7 @@ import PipelineTable from './PipelineTable';
 import WebsiteInboundsSection from './WebsiteInboundsSection';
 import WarmLeadsSection from './WarmLeadsSection';
 import WebinarRegistrantsSection from './WebinarRegistrantsSection';
+import LytxInboundsSection from './LytxInboundsSection';
 import GoogleAnalyticsCard from './GoogleAnalyticsCard';
 import HubSpotSection from './HubSpotSection';
 import DashboardTabs, { DashboardTab } from './DashboardTabs';
@@ -237,6 +238,10 @@ export default function Dashboard() {
 
             {data.webinarRegistrants && data.webinarRegistrants.length > 0 && (
               <WebinarRegistrantsSection registrants={data.webinarRegistrants} />
+            )}
+
+            {data.lytxInbounds && data.lytxInbounds.length > 0 && (
+              <LytxInboundsSection inbounds={data.lytxInbounds} />
             )}
           </>
         )}

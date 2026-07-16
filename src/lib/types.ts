@@ -137,6 +137,20 @@ export interface WebsiteInboundRecord {
   createDate?: string; // ISO timestamp, from the sheet's Create Date column
 }
 
+// Lytx-specific "Inbounds" tracker — separate Google Sheet (LYTX_INBOUNDS_SHEET_ID
+// env var), tab configurable via LYTX_INBOUNDS_TAB (defaults to 'ALL INBOUNDS').
+// Different column set from the myBasePay Website Inbounds tab.
+export interface LytxInboundRecord {
+  id: string;
+  createDate?: string;
+  firstName: string;
+  lastName: string;
+  accountName: string;
+  orrjoContact: string;
+  orrjoStatus: string;
+  orrjoNotes: string;
+}
+
 export interface DashboardData {
   meetings: MeetingRecord[];
   leads: LeadRecord[];
@@ -147,6 +161,7 @@ export interface DashboardData {
   websiteInbounds?: WebsiteInboundRecord[];
   warmLeads?: WarmLeadRecord[];
   webinarRegistrants?: WebinarRegistrant[];
+  lytxInbounds?: LytxInboundRecord[];
   availableQuarters?: QuarterOption[];
   lastUpdated: string;
 }
