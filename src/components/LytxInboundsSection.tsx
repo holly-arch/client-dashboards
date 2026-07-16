@@ -47,10 +47,10 @@ function StatusPill({ value }: { value: string }) {
 }
 
 export default function LytxInboundsSection({ inbounds }: LytxInboundsSectionProps) {
-  const allHaveDate = inbounds.length > 0 && inbounds.every((i) => i.createDate);
-  const ordered = allHaveDate
-    ? [...inbounds].sort((a, b) => (b.createDate ?? '').localeCompare(a.createDate ?? ''))
-    : [...inbounds].reverse();
+  // Bottom-of-sheet at the top — new inbounds are appended to the bottom of
+  // the Lytx sheet, so reversing gives newest-first regardless of what the
+  // Created Date column happens to say.
+  const ordered = [...inbounds].reverse();
 
   const total = inbounds.length;
   const hasDate = inbounds.some((i) => i.createDate);
