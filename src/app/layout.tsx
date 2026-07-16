@@ -20,6 +20,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Runs before React hydration so users see the correct theme instantly rather
+// than a flash of light-mode default followed by the stored dark preference.
+// Reads localStorage.dashboard_theme (populated by ThemeToggle) and stamps
+// data-theme on <html> if set to 'dark'. Default (no key) = light.
+const themeInitScript = `
+(function(){try{var t=localStorage.getItem('dashboard_theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -30,7 +38,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col" style={{ background: '#0a0a0a', color: '#fafafa' }}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+      <body className="min-h-full flex flex-col">
         {children}
       </body>
     </html>

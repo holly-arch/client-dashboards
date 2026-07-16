@@ -20,7 +20,7 @@ export default function Home() {
   if (type === null) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen">
-        <div className="text-sm" style={{ color: '#666' }}>Loading...</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading...</div>
       </div>
     );
   }

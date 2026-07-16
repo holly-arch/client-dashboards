@@ -30,12 +30,12 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
   const hasChannel = CHANNEL_CLIENTS.has(clientName ?? '') && leads.some((l) => l.channel !== undefined);
 
   return (
-    <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5 flex flex-col h-full" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-4">
         <h3 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PIPELINE</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold" style={{ color: '#fafafa' }}>Leads Generated</span>
-          <span className="text-sm" style={{ color: '#666' }}>{leads.length} total</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Leads Generated</span>
+          <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{leads.length} total</span>
         </div>
       </div>
 
@@ -51,8 +51,8 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
               className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
               style={
                 isActive
-                  ? { background: '#333', color: '#fafafa' }
-                  : { background: '#1a1a1a', color: '#b0b0b0', border: '1px solid #252525' }
+                  ? { background: 'var(--color-button-bg)', color: 'var(--color-text-primary)' }
+                  : { background: 'var(--color-card-alt)', color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)' }
               }
             >
               {status} <span className="font-bold">{count}</span>
@@ -65,7 +65,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
       <div className="hidden md:block overflow-x-auto overflow-y-auto flex-1 max-h-96">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: '#666', background: '#141414' }}>
+            <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: 'var(--color-text-faint)', background: 'var(--color-card)' }}>
               <th className="text-left py-2 pr-3 font-medium">Company</th>
               <th className="text-left py-2 pr-3 font-medium">Contact</th>
               <th className="text-left py-2 pr-3 font-medium">Title</th>
@@ -79,15 +79,15 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
           </thead>
           <tbody className="divide-subtle">
             {filteredLeads.map((l) => (
-              <tr key={l.id} className="hover:bg-white/[0.03]">
-                <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{l.company}</td>
-                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{l.contactName}</td>
-                <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: '#888' }}>{l.contactTitle}</td>
-                {hasIndustry && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.industry || '—'}</td>}
-                <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(l.date)}</td>
+              <tr key={l.id} className="row-hover">
+                <td className="py-3 pr-3 font-medium" style={{ color: 'var(--color-text-primary)' }}>{l.company}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{l.contactName}</td>
+                <td className="py-3 pr-3 truncate max-w-[160px]" style={{ color: 'var(--color-text-muted)' }}>{l.contactTitle}</td>
+                {hasIndustry && <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{l.industry || '—'}</td>}
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{formatDate(l.date)}</td>
                 <td className="py-3 pr-3"><StatusBadge status={l.status} /></td>
-                {hasChannel && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.channel || '—'}</td>}
-                {hasSource && <td className="py-3 pr-3" style={{ color: '#888' }}>{l.source || '—'}</td>}
+                {hasChannel && <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{l.channel || '—'}</td>}
+                {hasSource && <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{l.source || '—'}</td>}
                 {hasLytxNotes && (
                   <td className="py-3">
                     <EditableText value={l.lytxNotes || ''} sheetRowIndex={l.sheetRowIndex!} field="lytxNotes" placeholder="Add note..." onSaved={onRefresh} />
@@ -97,7 +97,7 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
             ))}
             {filteredLeads.length === 0 && (
               <tr>
-                <td colSpan={5 + (hasIndustry ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: '#555' }}>No leads found</td>
+                <td colSpan={5 + (hasIndustry ? 1 : 0) + (hasChannel ? 1 : 0) + (hasSource ? 1 : 0) + (hasLytxNotes ? 1 : 0)} className="py-8 text-center" style={{ color: 'var(--color-text-fainter)' }}>No leads found</td>
               </tr>
             )}
           </tbody>
@@ -107,27 +107,27 @@ export default function PipelineTable({ leads, statusCounts, onRefresh, clientNa
       {/* Mobile cards */}
       <div className="md:hidden overflow-y-auto flex-1 max-h-96 space-y-3">
         {filteredLeads.map((l) => (
-          <div key={l.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+          <div key={l.id} className="rounded-lg p-3" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
             <div className="flex items-start justify-between mb-1">
-              <span className="font-medium text-sm" style={{ color: '#fafafa' }}>{l.company}</span>
+              <span className="font-medium text-sm" style={{ color: 'var(--color-text-primary)' }}>{l.company}</span>
               <StatusBadge status={l.status} />
             </div>
-            <p className="text-sm" style={{ color: '#b0b0b0' }}>{l.contactName}</p>
-            <p className="text-xs truncate" style={{ color: '#888' }}>{l.contactTitle}</p>
-            {hasIndustry && l.industry && <p className="text-xs" style={{ color: '#888' }}>Industry: {l.industry}</p>}
-            {hasChannel && l.channel && <p className="text-xs" style={{ color: '#888' }}>Channel: {l.channel}</p>}
-            {hasSource && l.source && <p className="text-xs" style={{ color: '#888' }}>Source: {l.source}</p>}
-            {l.date && <p className="text-xs mt-1" style={{ color: '#666' }}>{formatDate(l.date)}</p>}
+            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{l.contactName}</p>
+            <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>{l.contactTitle}</p>
+            {hasIndustry && l.industry && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Industry: {l.industry}</p>}
+            {hasChannel && l.channel && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Channel: {l.channel}</p>}
+            {hasSource && l.source && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Source: {l.source}</p>}
+            {l.date && <p className="text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>{formatDate(l.date)}</p>}
             {hasLytxNotes && (
-              <div className="mt-2 pt-2" style={{ borderTop: '1px solid #252525' }}>
-                <span className="text-xs" style={{ color: '#666' }}>Lytx Notes:</span>
+              <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--color-border)' }}>
+                <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>Lytx Notes:</span>
                 <EditableText value={l.lytxNotes || ''} sheetRowIndex={l.sheetRowIndex!} field="lytxNotes" placeholder="Add note..." onSaved={onRefresh} />
               </div>
             )}
           </div>
         ))}
         {filteredLeads.length === 0 && (
-          <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No leads found</p>
+          <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>No leads found</p>
         )}
       </div>
     </div>

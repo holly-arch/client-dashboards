@@ -5,10 +5,10 @@ interface FleetSizeCardProps {
 export default function FleetSizeCard({ avgFleetSize }: FleetSizeCardProps) {
   return (
     <div className="rounded-lg p-[2px] inline-block w-full sm:w-auto sm:min-w-[260px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
-      <div className="rounded-lg p-4" style={{ background: '#141414' }}>
+      <div className="rounded-lg p-4" style={{ background: 'var(--color-card)' }}>
         <div className="flex items-baseline justify-between gap-3 mb-3">
           <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>AVG FLEET SIZE</h3>
-          <span className="text-[10px]" style={{ color: '#555' }}>booked meetings</span>
+          <span className="text-[10px]" style={{ color: 'var(--color-text-fainter)' }}>booked meetings</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'rgba(96,165,250,0.2)' }}>
@@ -19,8 +19,8 @@ export default function FleetSizeCard({ avgFleetSize }: FleetSizeCardProps) {
             </svg>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>Vehicles</p>
-            <p className="text-3xl font-bold leading-none mt-0.5" style={{ color: '#fafafa' }}>{avgFleetSize.toLocaleString('en-GB')}</p>
+            <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Vehicles</p>
+            <p className="text-3xl font-bold leading-none mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{avgFleetSize.toLocaleString('en-GB')}</p>
           </div>
         </div>
       </div>

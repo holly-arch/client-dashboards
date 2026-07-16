@@ -7,7 +7,7 @@ const STORFUND_STYLES: Record<string, { bg: string; text: string; border: string
   'Complete':          { bg: 'rgba(34,197,94,0.10)',   text: '#4ade80', border: 'rgba(34,197,94,0.30)' },
   'In progress':       { bg: 'rgba(39,204,215,0.10)',  text: '#27ccd7', border: 'rgba(39,204,215,0.30)' },
   'On hold':           { bg: 'rgba(245,158,11,0.10)',  text: '#fbbf24', border: 'rgba(245,158,11,0.30)' },
-  'Not started':       { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' },
+  'Not started':       { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' },
   // Content statuses
   'Published':         { bg: 'rgba(34,197,94,0.10)',   text: '#4ade80', border: 'rgba(34,197,94,0.30)' },
   'Scheduled':         { bg: 'rgba(39,204,215,0.10)',  text: '#27ccd7', border: 'rgba(39,204,215,0.30)' },
@@ -18,14 +18,14 @@ const STORFUND_STYLES: Record<string, { bg: string; text: string; border: string
   'Awaiting feedback': { bg: 'rgba(39,204,215,0.10)',  text: '#27ccd7', border: 'rgba(39,204,215,0.30)' },
 };
 
-const DEFAULT_STYLE = { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' };
+const DEFAULT_STYLE = { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' };
 
 interface StatusPillProps {
   status: string;
 }
 
 export default function StatusPill({ status }: StatusPillProps) {
-  if (!status) return <span style={{ color: '#555' }}>—</span>;
+  if (!status) return <span style={{ color: 'var(--color-text-fainter)' }}>—</span>;
   // Case-insensitive lookup so the sheet can use any capitalisation.
   const key = Object.keys(STORFUND_STYLES).find((k) => k.toLowerCase() === status.toLowerCase());
   const s = (key && STORFUND_STYLES[key]) || DEFAULT_STYLE;

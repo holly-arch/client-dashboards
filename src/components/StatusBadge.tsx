@@ -7,14 +7,14 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; border: string }
   'Nurture':              { bg: 'rgba(234,179,8,0.10)',   text: '#facc15', border: 'rgba(234,179,8,0.30)' },
   'Meeting Booked':       { bg: 'rgba(34,197,94,0.10)',   text: '#4ade80', border: 'rgba(34,197,94,0.30)' },
   'Engaged Lead':         { bg: 'rgba(59,130,246,0.10)',  text: '#60a5fa', border: 'rgba(59,130,246,0.30)' },
-  'Closed/Lost':          { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' },
-  'Lost':                 { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' },
-  'Closed Lost':          { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' },
+  'Closed/Lost':          { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' },
+  'Lost':                 { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' },
+  'Closed Lost':          { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' },
   'Referral':             { bg: 'rgba(168,85,247,0.12)',  text: '#c084fc', border: 'rgba(168,85,247,0.35)' },
   'Referrals':            { bg: 'rgba(168,85,247,0.12)',  text: '#c084fc', border: 'rgba(168,85,247,0.35)' },
 };
 
-const DEFAULT_STYLE = { bg: 'rgba(120,120,120,0.10)', text: '#9a9a9a', border: 'rgba(120,120,120,0.30)' };
+const DEFAULT_STYLE = { bg: 'rgba(120,120,120,0.10)', text: 'var(--color-text-muted)', border: 'rgba(120,120,120,0.30)' };
 
 interface StatusBadgeProps {
   status: string;

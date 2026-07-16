@@ -48,7 +48,7 @@ export default function EditableText({ value, sheetRowIndex, field, placeholder 
         onBlur={save}
         onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setCurrent(value); setEditing(false); } }}
         className="w-full px-2 py-1 rounded text-xs outline-none"
-        style={{ background: '#1a1a1a', border: '1px solid #ff2eeb', color: '#fafafa' }}
+        style={{ background: 'var(--color-card-alt)', border: '1px solid #ff2eeb', color: 'var(--color-text-primary)' }}
       />
     );
   }
@@ -58,7 +58,7 @@ export default function EditableText({ value, sheetRowIndex, field, placeholder 
       onClick={() => setEditing(true)}
       className="w-full text-left px-2 py-1 rounded text-xs truncate cursor-pointer hover:bg-white/[0.05] transition-colors"
       style={{
-        color: current ? '#b0b0b0' : '#555',
+        color: current ? 'var(--color-text-secondary)' : 'var(--color-text-fainter)',
         border: '1px solid transparent',
         opacity: saving ? 0.5 : 1,
       }}

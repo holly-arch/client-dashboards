@@ -63,7 +63,7 @@ function PasswordGate({ onAuth }: { onAuth: () => void }) {
       <form onSubmit={submit} className="flex flex-col items-center gap-4">
         <span className="text-2xl font-bold tracking-tight mb-2">
           <span style={{ color: '#ff2eeb' }}>ORR</span>
-          <span style={{ color: '#fafafa' }}>JO</span>
+          <span style={{ color: 'var(--color-text-primary)' }}>JO</span>
           <span style={{ color: '#ff2eeb' }}>.</span>
         </span>
         <input
@@ -73,9 +73,9 @@ function PasswordGate({ onAuth }: { onAuth: () => void }) {
           placeholder="Enter password"
           className="px-4 py-2 rounded-lg text-sm w-64 outline-none focus:ring-2"
           style={{
-            background: '#1a1a1a',
-            border: '1px solid #333',
-            color: '#fafafa',
+            background: 'var(--color-card-alt)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text-primary)',
           }}
           autoFocus
         />
@@ -83,7 +83,7 @@ function PasswordGate({ onAuth }: { onAuth: () => void }) {
           type="submit"
           disabled={checking}
           className="px-6 py-2 rounded-lg text-sm font-medium w-64 transition-opacity"
-          style={{ background: '#ff2eeb', color: '#fafafa', opacity: checking ? 0.5 : 1 }}
+          style={{ background: '#ff2eeb', color: 'var(--color-text-primary)', opacity: checking ? 0.5 : 1 }}
         >
           {checking ? 'Checking...' : 'Enter'}
         </button>
@@ -165,7 +165,7 @@ export default function Dashboard() {
   if (authed === null) {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen">
-        <div className="text-sm" style={{ color: '#666' }}>Loading...</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading...</div>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function Dashboard() {
   if (loading && !data) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-sm" style={{ color: '#666' }}>Loading dashboard...</div>
+        <div className="text-sm" style={{ color: 'var(--color-text-faint)' }}>Loading dashboard...</div>
       </div>
     );
   }
@@ -202,7 +202,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3">
             <div>
               <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>PERFORMANCE OVERVIEW</h2>
-              <h1 className="text-2xl font-bold" style={{ color: '#fafafa' }}>{activeTab === 'roi' ? 'ROI Dashboard' : activeTab === 'hubspot' ? 'HubSpot Dashboard' : activeTab === 'analytics' ? 'Analytics Dashboard' : 'Campaign Dashboard'}</h1>
+              <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{activeTab === 'roi' ? 'ROI Dashboard' : activeTab === 'hubspot' ? 'HubSpot Dashboard' : activeTab === 'analytics' ? 'Analytics Dashboard' : 'Campaign Dashboard'}</h1>
             </div>
             {(() => {
               const tabs: { value: DashboardTab; label: string }[] = [{ value: 'campaign', label: 'Campaign' }];

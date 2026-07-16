@@ -8,9 +8,53 @@
   --color-brand-border: rgba(255, 46, 235, 0.3);
 }
 
+/* ---- Theme tokens ----
+ * The dashboard supports two themes:
+ *   - LIGHT (default) — matches the palette on orrjo.com (near-white bg,
+ *     dark ink, muted lavender-grey secondary text)
+ *   - DARK — the original palette
+ *
+ * We use CSS variables so inline `style={{ background: 'var(--color-card)' }}`
+ * on components automatically adopts whichever theme is active. Theme is
+ * flipped by setting data-theme="dark" on <html> — see layout.tsx for the
+ * pre-hydration script that reads the user's saved preference from
+ * localStorage and applies it before React mounts (no flash).
+ */
+
+:root {
+  /* LIGHT (default) */
+  --color-bg: #f4f3f7;
+  --color-card: #ffffff;
+  --color-card-alt: #f8f7fb;
+  --color-border: #e5e4eb;
+  --color-border-subtle: rgba(14, 14, 18, 0.06);
+  --color-text-primary: #0e0e12;
+  --color-text-secondary: #4a4a5a;
+  --color-text-muted: #6e6d85;
+  --color-text-faint: #8a89a0;
+  --color-text-fainter: #a8a7bd;
+  --color-hover: rgba(0, 0, 0, 0.035);
+  --color-button-bg: #ececf2;
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #0a0a0a;
+  --color-card: #141414;
+  --color-card-alt: #1a1a1a;
+  --color-border: #252525;
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #b0b0b0;
+  --color-text-muted: #888888;
+  --color-text-faint: #666666;
+  --color-text-fainter: #555555;
+  --color-hover: rgba(255, 255, 255, 0.03);
+  --color-button-bg: #333333;
+}
+
 body {
-  background: #0a0a0a;
-  color: #fafafa;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
@@ -24,5 +68,16 @@ body {
 }
 
 .divide-subtle > * + * {
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Row hover — used on table rows across the app in place of the previous
+ * dark-only `hover:bg-white/[0.03]`. Uses --color-hover so it works in
+ * both light and dark themes.
+ */
+.row-hover {
+  transition: background 120ms ease;
+}
+.row-hover:hover {
+  background: var(--color-hover);
 }

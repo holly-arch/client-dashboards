@@ -16,7 +16,7 @@ const TAG_COLOURS: Record<string, string> = {
 
 function tagColour(name: string): string {
   const key = Object.keys(TAG_COLOURS).find((k) => k.toLowerCase() === name.toLowerCase());
-  return key ? TAG_COLOURS[key] : '#9a9a9a';
+  return key ? TAG_COLOURS[key] : 'var(--color-text-muted)';
 }
 
 // Returns the Monday of the ISO week containing `dateStr`, as YYYY-MM-DD.
@@ -49,28 +49,28 @@ export default function ActivityTimeline({ items }: ActivityTimelineProps) {
   }
 
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-4">
         <h3 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>TIMELINE</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold" style={{ color: '#fafafa' }}>Activity by Week</span>
-          <span className="text-sm" style={{ color: '#666' }}>{sorted.length} events</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Activity by Week</span>
+          <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{sorted.length} events</span>
         </div>
       </div>
 
       {sorted.length === 0 && (
-        <p className="py-8 text-center text-sm" style={{ color: '#555' }}>Nothing logged yet for this period</p>
+        <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>Nothing logged yet for this period</p>
       )}
 
       {[...groups.entries()].map(([wk, rows]) => (
         <div key={wk || 'undated'} className="mb-5 last:mb-0">
-          <h4 className="text-xs uppercase tracking-widest mb-3 pb-2" style={{ color: '#888', borderBottom: '1px solid #252525' }}>
+          <h4 className="text-xs uppercase tracking-widest mb-3 pb-2" style={{ color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}>
             {formatWeekHeading(wk)}
           </h4>
           <div className="space-y-3">
             {rows.map((r, i) => (
               <div key={`${r.description}-${i}`} className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-16 text-xs pt-0.5" style={{ color: '#888' }}>{formatDate(r.date) || '—'}</div>
+                <div className="flex-shrink-0 w-16 text-xs pt-0.5" style={{ color: 'var(--color-text-muted)' }}>{formatDate(r.date) || '—'}</div>
                 <div className="flex-shrink-0">
                   <span
                     className="inline-block px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
@@ -83,7 +83,7 @@ export default function ActivityTimeline({ items }: ActivityTimelineProps) {
                     {r.workstream || '—'}
                   </span>
                 </div>
-                <div className="flex-1 text-sm" style={{ color: '#fafafa' }}>
+                <div className="flex-1 text-sm" style={{ color: 'var(--color-text-primary)' }}>
                   {r.description}
                   {r.link && (
                     <a href={r.link} target="_blank" rel="noreferrer" className="ml-2 text-xs hover:underline" style={{ color: '#27ccd7' }}>Open ↗</a>

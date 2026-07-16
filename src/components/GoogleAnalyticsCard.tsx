@@ -50,10 +50,10 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent: s
   return (
     <div
       className="rounded-lg p-4 md:p-5"
-      style={{ background: '#141414', border: '1px solid #252525', borderTop: `4px solid ${accent}` }}
+      style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderTop: `4px solid ${accent}` }}
     >
-      <h4 className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#9a9a9a' }}>{label}</h4>
-      <p className="text-3xl font-bold" style={{ color: '#fafafa' }}>{value}</p>
+      <h4 className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>{label}</h4>
+      <p className="text-3xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
     </div>
   );
 }
@@ -61,11 +61,11 @@ function Kpi({ label, value, accent }: { label: string; value: string; accent: s
 function RankedTable({ title, rows, labelHeader }: { title: string; rows: AnalyticsRow[]; labelHeader: string }) {
   const max = Math.max(1, ...rows.map((r) => r.sessions));
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <h3 className="text-xs font-bold tracking-widest mb-3" style={{ color: '#ff2eeb' }}>{title}</h3>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+          <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
             <th className="text-left py-2 pr-3 font-medium">{labelHeader}</th>
             <th className="text-right py-2 font-medium">Sessions</th>
           </tr>
@@ -73,8 +73,8 @@ function RankedTable({ title, rows, labelHeader }: { title: string; rows: Analyt
         <tbody className="divide-subtle">
           {rows.map((r, idx) => (
             <tr key={`${r.label}-${idx}`}>
-              <td className="py-2 pr-3 truncate max-w-[260px]" style={{ color: '#fafafa' }} title={r.label}>{r.label}</td>
-              <td className="py-2 text-right tabular-nums" style={{ color: '#b0b0b0' }}>
+              <td className="py-2 pr-3 truncate max-w-[260px]" style={{ color: 'var(--color-text-primary)' }} title={r.label}>{r.label}</td>
+              <td className="py-2 text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>
                 <div className="flex items-center justify-end gap-2">
                   <div className="h-1 rounded-full" style={{ width: `${(r.sessions / max) * 60}px`, background: 'rgba(255,46,235,0.4)' }} />
                   <span>{formatNumber(r.sessions)}</span>
@@ -83,7 +83,7 @@ function RankedTable({ title, rows, labelHeader }: { title: string; rows: Analyt
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr><td colSpan={2} className="py-6 text-center" style={{ color: '#555' }}>No data</td></tr>
+            <tr><td colSpan={2} className="py-6 text-center" style={{ color: 'var(--color-text-fainter)' }}>No data</td></tr>
           )}
         </tbody>
       </table>
@@ -94,7 +94,7 @@ function RankedTable({ title, rows, labelHeader }: { title: string; rows: Analyt
 function RangeToggle({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
   const ranges: Range[] = ['7d', '30d', '90d'];
   return (
-    <div className="inline-flex rounded-lg p-1" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="inline-flex rounded-lg p-1" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       {ranges.map((r) => {
         const active = r === value;
         return (
@@ -105,7 +105,7 @@ function RangeToggle({ value, onChange }: { value: Range; onChange: (r: Range) =
             className="px-3 py-1 text-xs font-medium rounded-md transition-colors"
             style={{
               background: active ? '#ff2eeb' : 'transparent',
-              color: active ? '#fafafa' : '#888',
+              color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
             }}
           >
             {RANGE_LABELS[r]}
@@ -149,19 +149,19 @@ export default function GoogleAnalyticsCard() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
         <div>
           <h2 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>WEBSITE ANALYTICS</h2>
-          <h3 className="text-xl font-bold" style={{ color: '#fafafa' }}>Google Analytics</h3>
+          <h3 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Google Analytics</h3>
         </div>
         <RangeToggle value={range} onChange={setRange} />
       </div>
 
       {loading && !data && (
-        <div className="rounded-lg p-6 text-center text-sm" style={{ background: '#141414', border: '1px solid #252525', color: '#666' }}>
+        <div className="rounded-lg p-6 text-center text-sm" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', color: 'var(--color-text-faint)' }}>
           Loading analytics…
         </div>
       )}
 
       {error && !data && (
-        <div className="rounded-lg p-4 text-sm" style={{ background: '#141414', border: '1px solid #3a1a1a', color: '#f87171' }}>
+        <div className="rounded-lg p-4 text-sm" style={{ background: 'var(--color-card)', border: '1px solid #3a1a1a', color: '#f87171' }}>
           {error}
         </div>
       )}

@@ -45,18 +45,18 @@ export default function TouchpointsCard({ calls, linkedin, email, week }: Touchp
     const ch = channels[0];
     return (
       <div className="rounded-lg p-[2px] inline-block w-full sm:w-auto sm:min-w-[260px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
-        <div className="rounded-lg p-4" style={{ background: '#141414' }}>
+        <div className="rounded-lg p-4" style={{ background: 'var(--color-card)' }}>
           <div className="flex items-baseline justify-between gap-3 mb-3">
             <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WEEKLY TOUCHPOINTS</h3>
-            {week && <span className="text-[10px]" style={{ color: '#555' }}>w/c {week}</span>}
+            {week && <span className="text-[10px]" style={{ color: 'var(--color-text-fainter)' }}>w/c {week}</span>}
           </div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: ch.iconBg }}>
               {ch.icon}
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>{ch.label}</p>
-              <p className="text-3xl font-bold leading-none mt-0.5" style={{ color: '#fafafa' }}>{ch.value}</p>
+              <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{ch.label}</p>
+              <p className="text-3xl font-bold leading-none mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{ch.value}</p>
             </div>
           </div>
         </div>
@@ -67,10 +67,10 @@ export default function TouchpointsCard({ calls, linkedin, email, week }: Touchp
   // Multi-channel: keep the wider banner so the channels can sit side-by-side.
   return (
     <div className="relative rounded-lg p-[2px]" style={{ background: 'linear-gradient(to right, #ff2eeb, #22c55e)' }}>
-      <div className="rounded-lg p-4 md:p-6" style={{ background: '#141414' }}>
+      <div className="rounded-lg p-4 md:p-6" style={{ background: 'var(--color-card)' }}>
         <div className="flex items-baseline gap-3 mb-5">
           <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WEEKLY TOUCHPOINTS</h3>
-          {week && <span className="text-xs" style={{ color: '#555' }}>w/c {week}</span>}
+          {week && <span className="text-xs" style={{ color: 'var(--color-text-fainter)' }}>w/c {week}</span>}
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:justify-between">
           {channels.map((ch) => (
@@ -79,8 +79,8 @@ export default function TouchpointsCard({ calls, linkedin, email, week }: Touchp
                 {ch.icon}
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wide" style={{ color: '#888' }}>{ch.label}</p>
-                <p className="text-2xl font-bold" style={{ color: '#fafafa' }}>{ch.value}</p>
+                <p className="text-xs uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{ch.label}</p>
+                <p className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{ch.value}</p>
               </div>
             </div>
           ))}

@@ -28,7 +28,7 @@ const WORKSTREAM_ACCENTS: Record<string, string> = {
 function accentFor(name: string): string {
   // Case-insensitive lookup so the sheet header can vary slightly.
   const key = Object.keys(WORKSTREAM_ACCENTS).find((k) => k.toLowerCase() === name.toLowerCase());
-  return key ? WORKSTREAM_ACCENTS[key] : '#9a9a9a';
+  return key ? WORKSTREAM_ACCENTS[key] : 'var(--color-text-muted)';
 }
 
 export default function WorkstreamStrip({ workstreams }: WorkstreamStripProps) {
@@ -42,7 +42,7 @@ export default function WorkstreamStrip({ workstreams }: WorkstreamStripProps) {
     <div>
       <div className="mb-3 flex items-baseline gap-2">
         <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>WORKSTREAMS</h3>
-        <span className="text-sm" style={{ color: '#666' }}>{rows.length} active</span>
+        <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{rows.length} active</span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         {rows.map((w) => (
@@ -50,16 +50,16 @@ export default function WorkstreamStrip({ workstreams }: WorkstreamStripProps) {
             key={w.workstream}
             className="rounded-lg p-4"
             style={{
-              background: '#141414',
-              border: '1px solid #252525',
+              background: 'var(--color-card)',
+              border: '1px solid var(--color-border)',
               borderTop: `4px solid ${accentFor(w.workstream)}`,
             }}
           >
-            <h4 className="text-sm font-semibold mb-2" style={{ color: '#fafafa' }}>{w.workstream}</h4>
+            <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>{w.workstream}</h4>
             <div className="mb-2"><StatusPill status={w.status} /></div>
-            {w.owner && <p className="text-xs" style={{ color: '#888' }}>Owner: <span style={{ color: '#b0b0b0' }}>{w.owner}</span></p>}
-            {w.note && <p className="text-xs mt-1 truncate" title={w.note} style={{ color: '#888' }}>{w.note}</p>}
-            {w.lastUpdated && <p className="text-xs mt-1" style={{ color: '#555' }}>Updated {w.lastUpdated}</p>}
+            {w.owner && <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Owner: <span style={{ color: 'var(--color-text-secondary)' }}>{w.owner}</span></p>}
+            {w.note && <p className="text-xs mt-1 truncate" title={w.note} style={{ color: 'var(--color-text-muted)' }}>{w.note}</p>}
+            {w.lastUpdated && <p className="text-xs mt-1" style={{ color: 'var(--color-text-fainter)' }}>Updated {w.lastUpdated}</p>}
           </div>
         ))}
       </div>

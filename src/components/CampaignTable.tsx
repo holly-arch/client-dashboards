@@ -21,19 +21,19 @@ function getAttendPctColor(pct: number): string {
 
 export default function CampaignTable({ clients }: CampaignTableProps) {
   return (
-    <div className="rounded-lg p-6" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-6" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-6">
         <h3 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>CAMPAIGN BREAKDOWN</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold" style={{ color: '#fafafa' }}>Performance by Campaign</span>
-          <span className="text-sm" style={{ color: '#666' }}>{clients.length} campaigns</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Performance by Campaign</span>
+          <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{clients.length} campaigns</span>
         </div>
       </div>
 
       <div className="overflow-x-auto">
       <table className="w-full text-sm min-w-[700px]">
         <thead>
-          <tr className="text-xs uppercase tracking-wider" style={{ color: '#555', borderBottom: '1px solid #252525' }}>
+          <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-fainter)', borderBottom: '1px solid var(--color-border)' }}>
             <th className="text-left pb-4 pr-3 font-medium w-10"></th>
             <th className="text-left pb-4 pr-6 font-medium">Campaign</th>
             <th className="text-left pb-4 pr-6 font-medium">Meetings Booked</th>
@@ -62,8 +62,8 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
                     {idx + 1}
                   </span>
                 </td>
-                <td className="py-5 pr-6 font-semibold text-base" style={{ color: '#fafafa' }}>{client.name}</td>
-                <td className="py-5 pr-6" style={{ color: '#b0b0b0' }}>{m.meetingsBooked}</td>
+                <td className="py-5 pr-6 font-semibold text-base" style={{ color: 'var(--color-text-primary)' }}>{client.name}</td>
+                <td className="py-5 pr-6" style={{ color: 'var(--color-text-secondary)' }}>{m.meetingsBooked}</td>
                 <td className="py-5 pr-6" style={{ color: '#4ade80' }}>{groupSat}</td>
                 <td className="py-5 pr-6">
                   <span
@@ -77,8 +77,8 @@ export default function CampaignTable({ clients }: CampaignTableProps) {
                     {attendPct}%
                   </span>
                 </td>
-                <td className="py-5 pr-6" style={{ color: '#b0b0b0' }}>{m.upcoming}</td>
-                <td className="py-5 pr-6" style={{ color: '#b0b0b0' }}>{m.leadsGenerated}</td>
+                <td className="py-5 pr-6" style={{ color: 'var(--color-text-secondary)' }}>{m.upcoming}</td>
+                <td className="py-5 pr-6" style={{ color: 'var(--color-text-secondary)' }}>{m.leadsGenerated}</td>
                 <td className="py-5 text-right">
                   <a
                     href={client.url}

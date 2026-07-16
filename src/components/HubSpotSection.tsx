@@ -58,11 +58,11 @@ function Kpi({ label, value, accent, sub }: { label: string; value: string; acce
   return (
     <div
       className="rounded-lg p-4 md:p-5"
-      style={{ background: '#141414', border: '1px solid #252525', borderTop: `4px solid ${accent}` }}
+      style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)', borderTop: `4px solid ${accent}` }}
     >
-      <h4 className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: '#9a9a9a' }}>{label}</h4>
-      <p className="text-2xl md:text-3xl font-bold" style={{ color: '#fafafa' }}>{value}</p>
-      {sub && <p className="text-xs mt-1" style={{ color: '#888' }}>{sub}</p>}
+      <h4 className="text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>{label}</h4>
+      <p className="text-2xl md:text-3xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
+      {sub && <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
     </div>
   );
 }
@@ -84,14 +84,14 @@ function StageBadge({ label, probability }: { label: string; probability: number
 function PipelineFunnel({ buckets }: { buckets: HubSpotStageBucket[] }) {
   const maxValue = Math.max(1, ...buckets.map((b) => b.value));
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <h3 className="text-xs font-bold tracking-widest mb-3" style={{ color: '#ff2eeb' }}>PIPELINE BY STAGE</h3>
       {buckets.length === 0 ? (
-        <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No open deals in the pipeline</p>
+        <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>No open deals in the pipeline</p>
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+            <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
               <th className="text-left py-2 pr-3 font-medium">Stage</th>
               <th className="text-right py-2 pr-3 font-medium">Deals</th>
               <th className="text-right py-2 pr-3 font-medium">Value</th>
@@ -101,20 +101,20 @@ function PipelineFunnel({ buckets }: { buckets: HubSpotStageBucket[] }) {
           <tbody className="divide-subtle">
             {buckets.map((b) => (
               <tr key={b.stageId}>
-                <td className="py-3 pr-3" style={{ color: '#fafafa' }}>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-primary)' }}>
                   <div className="flex flex-col">
                     <span className="font-medium">{b.stageLabel}</span>
-                    <span className="text-xs" style={{ color: '#666' }}>{b.pipelineLabel}</span>
+                    <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>{b.pipelineLabel}</span>
                   </div>
                 </td>
-                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#b0b0b0' }}>{b.count}</td>
-                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#fafafa' }}>
+                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>{b.count}</td>
+                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>
                   <div className="flex items-center justify-end gap-2">
                     <div className="h-1 rounded-full hidden md:block" style={{ width: `${(b.value / maxValue) * 80}px`, background: 'rgba(255,46,235,0.4)' }} />
                     <span>{formatMoney(b.value)}</span>
                   </div>
                 </td>
-                <td className="py-3 text-right tabular-nums" style={{ color: '#888' }}>{formatMoney(b.weightedValue)}</td>
+                <td className="py-3 text-right tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{formatMoney(b.weightedValue)}</td>
               </tr>
             ))}
           </tbody>
@@ -126,16 +126,16 @@ function PipelineFunnel({ buckets }: { buckets: HubSpotStageBucket[] }) {
 
 function RecentDealsTable({ deals }: { deals: HubSpotDeal[] }) {
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <h3 className="text-xs font-bold tracking-widest mb-3" style={{ color: '#ff2eeb' }}>RECENTLY UPDATED DEALS</h3>
       {deals.length === 0 ? (
-        <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No deals</p>
+        <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>No deals</p>
       ) : (
         <>
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+                <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
                   <th className="text-left py-2 pr-3 font-medium">Deal</th>
                   <th className="text-left py-2 pr-3 font-medium">Stage</th>
                   <th className="text-right py-2 pr-3 font-medium">Amount</th>
@@ -146,11 +146,11 @@ function RecentDealsTable({ deals }: { deals: HubSpotDeal[] }) {
               <tbody className="divide-subtle">
                 {deals.map((d) => (
                   <tr key={d.id}>
-                    <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{d.name}</td>
+                    <td className="py-3 pr-3 font-medium" style={{ color: 'var(--color-text-primary)' }}>{d.name}</td>
                     <td className="py-3 pr-3"><StageBadge label={d.stageLabel} probability={d.probability} /></td>
-                    <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#fafafa' }}>{formatMoney(d.amount)}</td>
-                    <td className="py-3 pr-3" style={{ color: '#888' }}>{formatDate(d.closeDate)}</td>
-                    <td className="py-3" style={{ color: '#888' }}>{formatDate(d.lastModified)}</td>
+                    <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(d.amount)}</td>
+                    <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{formatDate(d.closeDate)}</td>
+                    <td className="py-3" style={{ color: 'var(--color-text-muted)' }}>{formatDate(d.lastModified)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -158,13 +158,13 @@ function RecentDealsTable({ deals }: { deals: HubSpotDeal[] }) {
           </div>
           <div className="md:hidden space-y-3">
             {deals.map((d) => (
-              <div key={d.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+              <div key={d.id} className="rounded-lg p-3" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
                 <div className="flex items-start justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#fafafa' }}>{d.name}</span>
-                  <span className="text-sm tabular-nums" style={{ color: '#fafafa' }}>{formatMoney(d.amount)}</span>
+                  <span className="font-medium text-sm" style={{ color: 'var(--color-text-primary)' }}>{d.name}</span>
+                  <span className="text-sm tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{formatMoney(d.amount)}</span>
                 </div>
                 <StageBadge label={d.stageLabel} probability={d.probability} />
-                <p className="text-xs mt-1" style={{ color: '#666' }}>Close: {formatDate(d.closeDate)} · Updated: {formatDate(d.lastModified)}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--color-text-faint)' }}>Close: {formatDate(d.closeDate)} · Updated: {formatDate(d.lastModified)}</p>
               </div>
             ))}
           </div>
@@ -201,7 +201,7 @@ export default function HubSpotSection() {
   }, [fetchData]);
 
   if (loading && !data) {
-    return <div className="text-sm py-8 text-center" style={{ color: '#666' }}>Loading HubSpot data…</div>;
+    return <div className="text-sm py-8 text-center" style={{ color: 'var(--color-text-faint)' }}>Loading HubSpot data…</div>;
   }
   if (error) {
     return <div className="text-sm py-8 text-center text-red-400">HubSpot error: {error}</div>;

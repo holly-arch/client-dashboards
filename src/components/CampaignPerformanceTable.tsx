@@ -18,12 +18,12 @@ function fmtInt(n: number): string {
 
 export default function CampaignPerformanceTable({ campaigns }: CampaignPerformanceTableProps) {
   return (
-    <div className="rounded-lg p-4 md:p-5 flex flex-col" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5 flex flex-col" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-4">
         <h3 className="text-xs font-bold tracking-widest mb-1" style={{ color: '#ff2eeb' }}>CAMPAIGN PERFORMANCE</h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-lg font-bold" style={{ color: '#fafafa' }}>Active Campaigns</span>
-          <span className="text-sm" style={{ color: '#666' }}>{campaigns.length} total</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>Active Campaigns</span>
+          <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{campaigns.length} total</span>
         </div>
       </div>
 
@@ -31,7 +31,7 @@ export default function CampaignPerformanceTable({ campaigns }: CampaignPerforma
       <div className="hidden md:block overflow-x-auto overflow-y-auto max-h-[500px]">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: '#666', background: '#141414' }}>
+            <tr className="text-xs uppercase tracking-wider sticky top-0 z-10" style={{ color: 'var(--color-text-faint)', background: 'var(--color-card)' }}>
               <th className="text-left py-2 pr-3 font-medium">Client</th>
               <th className="text-left py-2 pr-3 font-medium">Campaign</th>
               <th className="text-left py-2 pr-3 font-medium">Sector</th>
@@ -48,24 +48,24 @@ export default function CampaignPerformanceTable({ campaigns }: CampaignPerforma
           </thead>
           <tbody className="divide-subtle">
             {campaigns.map((c) => (
-              <tr key={c.id} className="hover:bg-white/[0.03]">
-                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{c.clientName}</td>
-                <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{c.campaignName}</td>
-                <td className="py-3 pr-3" style={{ color: '#888' }}>{c.targetSector}</td>
-                <td className="py-3 pr-3" style={{ color: '#888' }}>{c.location}</td>
-                <td className="py-3 pr-3" style={{ color: '#888' }}>{c.launchDate ? formatDate(c.launchDate) : '—'}</td>
-                <td className="py-3 pr-3 text-right" style={{ color: '#b0b0b0' }}>{fmtInt(c.inboxes)}</td>
-                <td className="py-3 pr-3 text-right" style={{ color: '#b0b0b0' }}>{fmtInt(c.emailsSent)}</td>
-                <td className="py-3 pr-3 text-right" style={{ color: '#b0b0b0' }}>{fmtInt(c.totalReplies)}</td>
+              <tr key={c.id} className="row-hover">
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{c.clientName}</td>
+                <td className="py-3 pr-3 font-medium" style={{ color: 'var(--color-text-primary)' }}>{c.campaignName}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{c.targetSector}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{c.location}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-muted)' }}>{c.launchDate ? formatDate(c.launchDate) : '—'}</td>
+                <td className="py-3 pr-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtInt(c.inboxes)}</td>
+                <td className="py-3 pr-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtInt(c.emailsSent)}</td>
+                <td className="py-3 pr-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtInt(c.totalReplies)}</td>
                 <td className="py-3 pr-3 text-right font-medium" style={{ color: '#22c55e' }}>{fmtInt(c.positiveReplies)}</td>
-                <td className="py-3 pr-3 text-right" style={{ color: '#b0b0b0' }}>{fmtPct(c.openRate)}</td>
-                <td className="py-3 pr-3 text-right" style={{ color: '#b0b0b0' }}>{fmtPct(c.clickRate)}</td>
-                <td className="py-3 text-right" style={{ color: '#b0b0b0' }}>{fmtPct(c.bounceRate)}</td>
+                <td className="py-3 pr-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.openRate)}</td>
+                <td className="py-3 pr-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.clickRate)}</td>
+                <td className="py-3 text-right" style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.bounceRate)}</td>
               </tr>
             ))}
             {campaigns.length === 0 && (
               <tr>
-                <td colSpan={12} className="py-8 text-center" style={{ color: '#555' }}>No campaigns found</td>
+                <td colSpan={12} className="py-8 text-center" style={{ color: 'var(--color-text-fainter)' }}>No campaigns found</td>
               </tr>
             )}
           </tbody>
@@ -75,24 +75,24 @@ export default function CampaignPerformanceTable({ campaigns }: CampaignPerforma
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {campaigns.map((c) => (
-          <div key={c.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+          <div key={c.id} className="rounded-lg p-3" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
             <div className="mb-2">
-              <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{c.campaignName}</p>
-              <p className="text-xs" style={{ color: '#888' }}>{c.clientName} · {c.targetSector || '—'} · {c.location || '—'}</p>
-              {c.launchDate && <p className="text-xs" style={{ color: '#666' }}>Launched {formatDate(c.launchDate)}</p>}
+              <p className="font-medium text-sm" style={{ color: 'var(--color-text-primary)' }}>{c.campaignName}</p>
+              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{c.clientName} · {c.targetSector || '—'} · {c.location || '—'}</p>
+              {c.launchDate && <p className="text-xs" style={{ color: 'var(--color-text-faint)' }}>Launched {formatDate(c.launchDate)}</p>}
             </div>
             <div className="grid grid-cols-3 gap-2 text-xs">
-              <div><span style={{ color: '#666' }}>Emails:</span> <span style={{ color: '#b0b0b0' }}>{fmtInt(c.emailsSent)}</span></div>
-              <div><span style={{ color: '#666' }}>Replies:</span> <span style={{ color: '#b0b0b0' }}>{fmtInt(c.totalReplies)}</span></div>
-              <div><span style={{ color: '#666' }}>Positive:</span> <span style={{ color: '#22c55e' }}>{fmtInt(c.positiveReplies)}</span></div>
-              <div><span style={{ color: '#666' }}>Open:</span> <span style={{ color: '#b0b0b0' }}>{fmtPct(c.openRate)}</span></div>
-              <div><span style={{ color: '#666' }}>Click:</span> <span style={{ color: '#b0b0b0' }}>{fmtPct(c.clickRate)}</span></div>
-              <div><span style={{ color: '#666' }}>Bounce:</span> <span style={{ color: '#b0b0b0' }}>{fmtPct(c.bounceRate)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Emails:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{fmtInt(c.emailsSent)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Replies:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{fmtInt(c.totalReplies)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Positive:</span> <span style={{ color: '#22c55e' }}>{fmtInt(c.positiveReplies)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Open:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.openRate)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Click:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.clickRate)}</span></div>
+              <div><span style={{ color: 'var(--color-text-faint)' }}>Bounce:</span> <span style={{ color: 'var(--color-text-secondary)' }}>{fmtPct(c.bounceRate)}</span></div>
             </div>
           </div>
         ))}
         {campaigns.length === 0 && (
-          <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No campaigns found</p>
+          <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>No campaigns found</p>
         )}
       </div>
     </div>

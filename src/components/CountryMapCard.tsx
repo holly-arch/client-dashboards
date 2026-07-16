@@ -54,11 +54,11 @@ function RankedList({ rows, highlightedName, onHover }: RankedListProps) {
   const top = rows.slice(0, 8);
   const max = Math.max(1, ...top.map((r) => r.activeUsers));
   return (
-    <div className="rounded-lg p-4" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
-      <h4 className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: '#9a9a9a' }}>Top Countries</h4>
+    <div className="rounded-lg p-4" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
+      <h4 className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: 'var(--color-text-muted)' }}>Top Countries</h4>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+          <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
             <th className="text-left py-1.5 pr-3 font-medium">Country</th>
             <th className="text-right py-1.5 font-medium">Users</th>
           </tr>
@@ -73,8 +73,8 @@ function RankedList({ rows, highlightedName, onHover }: RankedListProps) {
                 onMouseLeave={() => onHover(null)}
                 style={{ background: isActive ? 'rgba(255,46,235,0.08)' : 'transparent' }}
               >
-                <td className="py-1.5 pr-3 truncate max-w-[160px]" style={{ color: '#fafafa' }} title={r.name}>{r.name}</td>
-                <td className="py-1.5 text-right tabular-nums" style={{ color: '#b0b0b0' }}>
+                <td className="py-1.5 pr-3 truncate max-w-[160px]" style={{ color: 'var(--color-text-primary)' }} title={r.name}>{r.name}</td>
+                <td className="py-1.5 text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>
                   <div className="flex items-center justify-end gap-2">
                     <div className="h-1 rounded-full" style={{ width: `${(r.activeUsers / max) * 50}px`, background: 'rgba(255,46,235,0.4)' }} />
                     <span>{r.activeUsers.toLocaleString('en-GB')}</span>
@@ -84,7 +84,7 @@ function RankedList({ rows, highlightedName, onHover }: RankedListProps) {
             );
           })}
           {top.length === 0 && (
-            <tr><td colSpan={2} className="py-6 text-center" style={{ color: '#555' }}>No data</td></tr>
+            <tr><td colSpan={2} className="py-6 text-center" style={{ color: 'var(--color-text-fainter)' }}>No data</td></tr>
           )}
         </tbody>
       </table>
@@ -113,7 +113,7 @@ export default function CountryMapCard({ countries }: CountryMapCardProps) {
     () =>
       scaleLinear<string>()
         .domain([0, max * 0.05, max * 0.2, max])
-        .range(['#1a1a1a', '#3a1535', '#a01e8c', '#ff2eeb'])
+        .range(['var(--color-card-alt)', '#3a1535', '#a01e8c', '#ff2eeb'])
         .clamp(true),
     [max],
   );
@@ -121,14 +121,14 @@ export default function CountryMapCard({ countries }: CountryMapCardProps) {
   const totalUsers = countries.reduce((sum, c) => sum + c.activeUsers, 0);
 
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-4 flex items-baseline gap-2">
         <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>USERS BY COUNTRY</h3>
-        <span className="text-sm" style={{ color: '#666' }}>{totalUsers.toLocaleString('en-GB')} active users</span>
+        <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{totalUsers.toLocaleString('en-GB')} active users</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-lg overflow-hidden" style={{ background: '#0f0f0f', border: '1px solid #252525' }}>
+        <div className="lg:col-span-2 rounded-lg overflow-hidden" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
           <ComposableMap
             projectionConfig={{ scale: 130 }}
             width={800}
@@ -140,7 +140,7 @@ export default function CountryMapCard({ countries }: CountryMapCardProps) {
                 geographies.map((geo) => {
                   const name = geo.properties.name ?? '';
                   const users = usersByName.get(name) ?? 0;
-                  const fill = users > 0 ? colorScale(users) : '#252525';
+                  const fill = users > 0 ? colorScale(users) : 'var(--color-border)';
                   const isHovered = hovered === name;
                   return (
                     <Geography
@@ -163,7 +163,7 @@ export default function CountryMapCard({ countries }: CountryMapCardProps) {
             </Geographies>
           </ComposableMap>
           {hovered && (
-            <div className="px-3 py-2 text-xs" style={{ background: '#141414', borderTop: '1px solid #252525', color: '#fafafa' }}>
+            <div className="px-3 py-2 text-xs" style={{ background: 'var(--color-card)', borderTop: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>
               {hovered}{usersByName.has(hovered) ? ` — ${usersByName.get(hovered)!.toLocaleString('en-GB')} users` : ''}
             </div>
           )}

@@ -60,7 +60,7 @@ export default function MetricCards({ metrics }: MetricCardsProps) {
           }
         />
       </div>
-      <p className="text-xs mt-3" style={{ color: '#555' }}>
+      <p className="text-xs mt-3" style={{ color: 'var(--color-text-fainter)' }}>
         *Meetings Sat includes confirmed attendances plus 80% of upcoming meetings based on historical attendance rates.
       </p>
     </div>

@@ -29,11 +29,11 @@ const STATUS_STYLES: { match: string; bg: string; fg: string; border: string }[]
 ];
 
 function StatusPill({ value }: { value: string }) {
-  if (!value) return <span style={{ color: '#555' }}>—</span>;
+  if (!value) return <span style={{ color: 'var(--color-text-fainter)' }}>—</span>;
   const lower = value.toLowerCase();
   const style = STATUS_STYLES.find((s) => lower.includes(s.match)) ?? {
     bg: 'rgba(160,160,160,0.1)',
-    fg: '#a0a0a0',
+    fg: 'var(--color-text-secondary)',
     border: 'rgba(160,160,160,0.3)',
   };
   return (
@@ -56,17 +56,17 @@ export default function LytxInboundsSection({ inbounds }: LytxInboundsSectionPro
   const hasDate = inbounds.some((i) => i.createDate);
 
   return (
-    <div className="rounded-lg p-4 md:p-5" style={{ background: '#141414', border: '1px solid #252525' }}>
+    <div className="rounded-lg p-4 md:p-5" style={{ background: 'var(--color-card)', border: '1px solid var(--color-border)' }}>
       <div className="mb-4 flex items-baseline gap-2">
         <h3 className="text-xs font-bold tracking-widest" style={{ color: '#ff2eeb' }}>INBOUNDS</h3>
-        <span className="text-sm" style={{ color: '#666' }}>{total} total</span>
+        <span className="text-sm" style={{ color: 'var(--color-text-faint)' }}>{total} total</span>
       </div>
 
       {/* Desktop table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wider" style={{ color: '#666' }}>
+            <tr className="text-xs uppercase tracking-wider" style={{ color: 'var(--color-text-faint)' }}>
               {hasDate && <th className="text-left py-2 pr-3 font-medium whitespace-nowrap">Created Date</th>}
               <th className="text-left py-2 pr-3 font-medium">First Name</th>
               <th className="text-left py-2 pr-3 font-medium">Last Name</th>
@@ -78,19 +78,19 @@ export default function LytxInboundsSection({ inbounds }: LytxInboundsSectionPro
           </thead>
           <tbody className="divide-subtle">
             {ordered.map((i) => (
-              <tr key={i.id} className="hover:bg-white/[0.03] align-top">
-                {hasDate && <td className="py-3 pr-3 whitespace-nowrap tabular-nums" style={{ color: '#888' }}>{formatCreateDate(i.createDate)}</td>}
-                <td className="py-3 pr-3 font-medium" style={{ color: '#fafafa' }}>{i.firstName || '—'}</td>
-                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{i.lastName || '—'}</td>
-                <td className="py-3 pr-3" style={{ color: '#fafafa' }}>{i.accountName || '—'}</td>
-                <td className="py-3 pr-3" style={{ color: '#b0b0b0' }}>{i.orrjoContact || '—'}</td>
+              <tr key={i.id} className="row-hover align-top">
+                {hasDate && <td className="py-3 pr-3 whitespace-nowrap tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{formatCreateDate(i.createDate)}</td>}
+                <td className="py-3 pr-3 font-medium" style={{ color: 'var(--color-text-primary)' }}>{i.firstName || '—'}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{i.lastName || '—'}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-primary)' }}>{i.accountName || '—'}</td>
+                <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{i.orrjoContact || '—'}</td>
                 <td className="py-3 pr-3"><StatusPill value={i.orrjoStatus} /></td>
-                <td className="py-3 max-w-[320px] whitespace-pre-wrap break-words" style={{ color: '#888' }}>{i.orrjoNotes}</td>
+                <td className="py-3 max-w-[320px] whitespace-pre-wrap break-words" style={{ color: 'var(--color-text-muted)' }}>{i.orrjoNotes}</td>
               </tr>
             ))}
             {ordered.length === 0 && (
               <tr>
-                <td colSpan={hasDate ? 7 : 6} className="py-8 text-center" style={{ color: '#555' }}>No inbounds yet</td>
+                <td colSpan={hasDate ? 7 : 6} className="py-8 text-center" style={{ color: 'var(--color-text-fainter)' }}>No inbounds yet</td>
               </tr>
             )}
           </tbody>
@@ -100,21 +100,21 @@ export default function LytxInboundsSection({ inbounds }: LytxInboundsSectionPro
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {ordered.map((i) => (
-          <div key={i.id} className="rounded-lg p-3" style={{ background: '#1a1a1a', border: '1px solid #252525' }}>
+          <div key={i.id} className="rounded-lg p-3" style={{ background: 'var(--color-card-alt)', border: '1px solid var(--color-border)' }}>
             <div className="flex items-start justify-between gap-2 mb-1">
-              <p className="font-medium text-sm" style={{ color: '#fafafa' }}>{i.firstName} {i.lastName}</p>
-              {hasDate && <p className="text-xs whitespace-nowrap tabular-nums" style={{ color: '#666' }}>{formatCreateDate(i.createDate)}</p>}
+              <p className="font-medium text-sm" style={{ color: 'var(--color-text-primary)' }}>{i.firstName} {i.lastName}</p>
+              {hasDate && <p className="text-xs whitespace-nowrap tabular-nums" style={{ color: 'var(--color-text-faint)' }}>{formatCreateDate(i.createDate)}</p>}
             </div>
-            {i.accountName && <p className="text-xs" style={{ color: '#b0b0b0' }}>{i.accountName}</p>}
+            {i.accountName && <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{i.accountName}</p>}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <StatusPill value={i.orrjoStatus} />
-              {i.orrjoContact && <span className="text-xs" style={{ color: '#888' }}>Contact: {i.orrjoContact}</span>}
+              {i.orrjoContact && <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Contact: {i.orrjoContact}</span>}
             </div>
-            {i.orrjoNotes && <p className="text-xs mt-2 whitespace-pre-wrap break-words" style={{ color: '#888' }}>{i.orrjoNotes}</p>}
+            {i.orrjoNotes && <p className="text-xs mt-2 whitespace-pre-wrap break-words" style={{ color: 'var(--color-text-muted)' }}>{i.orrjoNotes}</p>}
           </div>
         ))}
         {ordered.length === 0 && (
-          <p className="py-8 text-center text-sm" style={{ color: '#555' }}>No inbounds yet</p>
+          <p className="py-8 text-center text-sm" style={{ color: 'var(--color-text-fainter)' }}>No inbounds yet</p>
         )}
       </div>
     </div>
