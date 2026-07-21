@@ -69,7 +69,7 @@ function num(value: string | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-async function runReport(args: Record<string, unknown>): Promise<GaReportResponse> {
+export async function runReport(args: Record<string, unknown>): Promise<GaReportResponse> {
   const composio = client();
   // The Composio SDK returns { successful, data, error } — unwrap to the raw GA response.
   // Composio's manual execute() rejects `version: 'latest'` unless dangerouslySkipVersionCheck
