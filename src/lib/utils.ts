@@ -142,13 +142,27 @@ function monthsBetween(a: string | undefined, b: string | undefined): number | u
   return Math.max(0, Math.round(diff / AVG_MONTH_MS));
 }
 
+// Derive an implicit "first billed date" from the earliest monthly cell that
+// has a positive amount. Used when the ROI sheet doesn't carry an explicit
+// First Billed Date column - the first month with revenue is a good proxy.
+// Anchored to the 1st of that month.
+function deriveFirstBilledFromMonthly(monthly: { year: number; month: number; amount: number }[]): string | undefined {
+  const withValue = monthly.filter((m) => m.amount > 0);
+  if (withValue.length === 0) return undefined;
+  const earliest = withValue.reduce((a, b) =>
+    a.year * 12 + a.month <= b.year * 12 + b.month ? a : b,
+  );
+  return new Date(Date.UTC(earliest.year, earliest.month, 1)).toISOString();
+}
+
 // One sheet row = one opportunity. Same-name rows stay distinct so a deal that
 // has both a Pipeline Value row and a Contract row (e.g. Trust Hire's YTL)
 // renders as two separate rows on the dashboard (one in Revenue, one in
 // Pipeline). Billed counts only the monthly cells whose (year, month) falls
 // inside the selected period AND are past-or-current (using today as the
 // cutoff). Cycle counts whole months between First Meeting Date and First
-// Billed Date, populated from the sheet.
+// Billed Date; First Billed Date is read from the sheet if present, otherwise
+// derived from the earliest monthly cell with a positive amount.
 function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOpportunity[] {
   const now = new Date();
   const todayKey = now.getFullYear() * 12 + now.getMonth();
@@ -160,11 +174,13 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
       .filter((m) => m.year * 12 + m.month <= todayKey)
       .reduce((s, m) => s + m.amount, 0);
     const totalContract = r.totalContractValue ?? r.annualContractValue ?? monthsSum;
-    const cycleMonths = monthsBetween(r.firstMeetingDate, r.firstBilledDate);
+    const firstBilledDate = r.firstBilledDate ?? deriveFirstBilledFromMonthly(r.monthly);
+    const cycleMonths = monthsBetween(r.firstMeetingDate, firstBilledDate);
     return {
       ...r,
       totalContract,
       billed: pastSum,
+      ...(firstBilledDate ? { firstBilledDate } : {}),
       ...(cycleMonths !== undefined ? { cycleMonths } : {}),
     };
   });
