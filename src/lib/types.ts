@@ -24,7 +24,7 @@ export interface MeetingRecord {
   channel?: string;
   bookedWith?: string;
   // Populated only when the deployment has HubSpot wired up (currently
-  // myBasePay). Enrichment is best-effort — any of these can be undefined
+  // myBasePay). Enrichment is best-effort - any of these can be undefined
   // if the contact wasn't matched in HubSpot.
   hubspotContactUrl?: string;
   hubspotOwner?: string;
@@ -78,20 +78,26 @@ export interface RoiOpportunity {
   pipelineValue?: number;
   annualContractValue?: number;
   totalContractValue?: number; // Lifetime value over the full contract duration
+  firstMeetingDate?: string;   // ISO date of the first meeting sat for this opportunity
+  firstBilledDate?: string;    // ISO date of the first invoice / revenue landed
   monthly: { year: number; month: number; amount: number }[]; // month is 0-indexed
   notes?: string;
   typeOfService?: string;
   // Derived (computed in computeOpportunities):
   totalContract: number;       // Prefers totalContractValue, falls back to annualContractValue, then to sum of monthly
   billed: number;              // Period-filtered: monthly cells in range AND <= today
-  toBeBilled: number;          // Period-filtered: monthly cells in range AND > today
+  cycleMonths?: number;        // Rounded months between firstMeetingDate and firstBilledDate
 }
 
 export interface RoiTotals {
-  annual12moContract: number;  // Sum of annualContractValue across all opportunities
-  totalContractValue: number;  // Sum of totalContractValue (falls back to annualContractValue per row)
-  totalBilled: number;         // Sum of billed (period-filtered)
-  totalPipeline: number;       // Sum of pipelineValue
+  annual12moContract: number;         // For all_time: sum of annualContractValue. For a specific period: sum of monthly cells within that period.
+  annual12moContractLabel: string;    // Human label for the KPI tile - reflects the current time filter
+  totalContractValue: number;         // Sum of totalContractValue (falls back to annualContractValue per row). Time-independent.
+  totalBilled: number;                // Sum of billed (period-filtered)
+  totalPipeline: number;              // Sum of pipelineValue. Time-independent.
+  meetingsBooked: number;             // Passed in from DashboardMetrics - total meetings booked in the current period
+  closedCount: number;                // Opportunities with a signed contract value OR any billed revenue
+  conversionPct: number;              // closedCount / meetingsBooked * 100 - 0 when meetingsBooked is 0
 }
 
 export interface RoiSummary {
@@ -137,7 +143,7 @@ export interface WebsiteInboundRecord {
   createDate?: string; // ISO timestamp, from the sheet's Create Date column
 }
 
-// Lytx-specific "Inbounds" tracker — separate Google Sheet (LYTX_INBOUNDS_SHEET_ID
+// Lytx-specific "Inbounds" tracker - separate Google Sheet (LYTX_INBOUNDS_SHEET_ID
 // env var), tab configurable via LYTX_INBOUNDS_TAB (defaults to 'ALL INBOUNDS').
 // Different column set from the myBasePay Website Inbounds tab.
 export interface LytxInboundRecord {

@@ -170,7 +170,7 @@ export default function Dashboard() {
     );
   }
 
-  // Not authed — show password gate
+  // Not authed - show password gate
   if (!authed) {
     return <PasswordGate onAuth={() => setAuthed(true)} />;
   }
@@ -251,7 +251,7 @@ export default function Dashboard() {
         {activeTab === 'analytics' && hasAnalytics && <GoogleAnalyticsCard />}
 
         {activeTab === 'roi' && data.roi && (() => {
-          const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0 || o.toBeBilled > 0);
+          const revenueRows = data.roi.opportunities.filter((o) => o.totalContract > 0 || o.billed > 0);
           const pipelineRows = data.roi.opportunities.filter((o) => (o.pipelineValue ?? 0) > 0);
           return (
             <>

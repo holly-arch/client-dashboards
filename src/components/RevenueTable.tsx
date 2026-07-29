@@ -5,8 +5,13 @@ interface RevenueTableProps {
 }
 
 function fmt(n: number): string {
-  if (n === 0) return '—';
+  if (n === 0) return '-';
   return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
+}
+
+function fmtCycle(m: number | undefined): string {
+  if (m === undefined) return '-';
+  return `${m} mo`;
 }
 
 export default function RevenueTable({ opportunities }: RevenueTableProps) {
@@ -16,9 +21,8 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
       annualContract: s.annualContract + (o.annualContractValue ?? 0),
       totalContract: s.totalContract + (o.totalContractValue ?? o.annualContractValue ?? 0),
       billed: s.billed + o.billed,
-      toBeBilled: s.toBeBilled + o.toBeBilled,
     }),
-    { annualContract: 0, totalContract: 0, billed: 0, toBeBilled: 0 },
+    { annualContract: 0, totalContract: 0, billed: 0 },
   );
 
   return (
@@ -41,7 +45,7 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
               <th className="text-right py-2 pr-3 font-medium">Annual Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Total Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Billed</th>
-              <th className="text-right py-2 font-medium">To Be Billed</th>
+              <th className="text-right py-2 font-medium">Cycle</th>
             </tr>
           </thead>
           <tbody className="divide-subtle">
@@ -54,11 +58,11 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
                     {o.opportunity}
                     {o.notes && <span className="block text-xs font-normal mt-0.5" style={{ color: 'var(--color-text-faint)' }}>{o.notes}</span>}
                   </td>
-                  {hasTypeOfService && <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{o.typeOfService || '—'}</td>}
+                  {hasTypeOfService && <td className="py-3 pr-3" style={{ color: 'var(--color-text-secondary)' }}>{o.typeOfService || '-'}</td>}
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(annual)}</td>
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(total)}</td>
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(o.billed)}</td>
-                  <td className="py-3 text-right tabular-nums" style={{ color: '#facc15' }}>{fmt(o.toBeBilled)}</td>
+                  <td className="py-3 text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtCycle(o.cycleMonths)}</td>
                 </tr>
               );
             })}
@@ -68,7 +72,7 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.annualContract)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.totalContract)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</td>
-              <td className="py-3 text-right tabular-nums font-bold" style={{ color: '#facc15' }}>{fmt(totals.toBeBilled)}</td>
+              <td />
             </tr>
           </tbody>
         </table>
@@ -91,8 +95,8 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
                 <span className="text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(total)}</span>
                 <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
                 <span className="text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(o.billed)}</span>
-                <span style={{ color: 'var(--color-text-faint)' }}>To Be Billed</span>
-                <span className="text-right tabular-nums" style={{ color: '#facc15' }}>{fmt(o.toBeBilled)}</span>
+                <span style={{ color: 'var(--color-text-faint)' }}>Cycle</span>
+                <span className="text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtCycle(o.cycleMonths)}</span>
               </div>
             </div>
           );
@@ -106,8 +110,6 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.totalContract)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
             <span className="text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</span>
-            <span style={{ color: 'var(--color-text-faint)' }}>To Be Billed</span>
-            <span className="text-right tabular-nums font-bold" style={{ color: '#facc15' }}>{fmt(totals.toBeBilled)}</span>
           </div>
         </div>
       </div>

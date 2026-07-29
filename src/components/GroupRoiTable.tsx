@@ -11,8 +11,13 @@ interface GroupRoiTableProps {
 }
 
 function fmt(n: number): string {
-  if (n === 0) return '—';
+  if (n === 0) return '-';
   return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
+}
+
+function fmtPct(n: number): string {
+  if (!n || !isFinite(n)) return '-';
+  return `${n.toFixed(1)}%`;
 }
 
 export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
@@ -25,9 +30,9 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
         annual: t?.annual12moContract ?? 0,
         total: t?.totalContractValue ?? 0,
         billed: t?.totalBilled ?? 0,
-        toBeBilled: c.data.roi?.opportunities.reduce((s, o) => s + o.toBeBilled, 0) ?? 0,
         pipeline: t?.totalPipeline ?? 0,
         deals: c.data.roi?.opportunities.length ?? 0,
+        conversion: t?.conversionPct ?? 0,
       };
     })
     .sort((a, b) => (b.annual + b.pipeline) - (a.annual + a.pipeline));
@@ -37,11 +42,10 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
       annual: s.annual + r.annual,
       total: s.total + r.total,
       billed: s.billed + r.billed,
-      toBeBilled: s.toBeBilled + r.toBeBilled,
       pipeline: s.pipeline + r.pipeline,
       deals: s.deals + r.deals,
     }),
-    { annual: 0, total: 0, billed: 0, toBeBilled: 0, pipeline: 0, deals: 0 },
+    { annual: 0, total: 0, billed: 0, pipeline: 0, deals: 0 },
   );
 
   return (
@@ -63,8 +67,8 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <th className="text-right py-2 pr-3 font-medium">Annual Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Total Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Billed</th>
-              <th className="text-right py-2 pr-3 font-medium">To Be Billed</th>
               <th className="text-right py-2 pr-3 font-medium">Pipeline</th>
+              <th className="text-right py-2 pr-3 font-medium">Conv %</th>
               <th className="text-right py-2 font-medium"># Opps</th>
             </tr>
           </thead>
@@ -77,8 +81,8 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.annual)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.total)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(r.billed)}</td>
-                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#facc15' }}>{fmt(r.toBeBilled)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>{fmt(r.pipeline)}</td>
+                <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtPct(r.conversion)}</td>
                 <td className="py-3 text-right tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{r.deals}</td>
               </tr>
             ))}
@@ -87,8 +91,8 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.annual)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.total)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</td>
-              <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#facc15' }}>{fmt(totals.toBeBilled)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.pipeline)}</td>
+              <td />
               <td className="py-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{totals.deals}</td>
             </tr>
           </tbody>
@@ -107,10 +111,10 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <span className="text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.total)}</span>
               <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
               <span className="text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(r.billed)}</span>
-              <span style={{ color: 'var(--color-text-faint)' }}>To Be Billed</span>
-              <span className="text-right tabular-nums" style={{ color: '#facc15' }}>{fmt(r.toBeBilled)}</span>
               <span style={{ color: 'var(--color-text-faint)' }}>Pipeline</span>
               <span className="text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>{fmt(r.pipeline)}</span>
+              <span style={{ color: 'var(--color-text-faint)' }}>Conversion</span>
+              <span className="text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtPct(r.conversion)}</span>
               <span style={{ color: 'var(--color-text-faint)' }}># Opportunities</span>
               <span className="text-right tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{r.deals}</span>
             </div>
@@ -125,8 +129,6 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.total)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
             <span className="text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</span>
-            <span style={{ color: 'var(--color-text-faint)' }}>To Be Billed</span>
-            <span className="text-right tabular-nums font-bold" style={{ color: '#facc15' }}>{fmt(totals.toBeBilled)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}>Pipeline</span>
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.pipeline)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}># Opportunities</span>

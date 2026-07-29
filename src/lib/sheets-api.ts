@@ -46,7 +46,7 @@ async function getAccessToken(): Promise<string> {
 
 interface SheetCache { data: string[][]; expiry: number; }
 const sheetCache = new Map<string, SheetCache>();
-const CACHE_TTL = 300_000; // 5 minutes — keeps us safely under the shared Google Sheets 60-req/min/user quota across 25+ dashboards
+const CACHE_TTL = 300_000; // 5 minutes - keeps us safely under the shared Google Sheets 60-req/min/user quota across 25+ dashboards
 
 export async function fetchSheet(sheetId: string, tabName: string): Promise<string[][]> {
   const cacheKey = `${sheetId}:${tabName}`;
@@ -171,7 +171,7 @@ const LEAD_COLUMN_MATCHERS: Record<string, string[]> = {
 // - Sum of all month-year columns + Contract Value = revenue for that row
 // - Pipeline Value column = potential / un-signed pipeline for that row
 // Past months count as already-billed, future months as still-to-be-billed
-// (used by upcoming dashboard tiles — not yet surfaced).
+// (used by upcoming dashboard tiles - not yet surfaced).
 function isMonthYearHeader(h: string): boolean {
   return /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}$/i.test(h.trim());
 }
@@ -277,7 +277,7 @@ export function parseDate(dateStr: string, timeStr?: string): string | null {
     date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
   }
 
-  // DD/MM (no year — assume current year, or previous year if date would be in future)
+  // DD/MM (no year - assume current year, or previous year if date would be in future)
   if (!date) {
     const dmMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
     if (dmMatch) {
@@ -376,7 +376,7 @@ export async function fetchDashboardRawData(
   const meetingsTab = overrideMeetingsTab || process.env.MEETINGS_TAB || 'Meetings booked';
   const leadsTab = overrideLeadsTab || process.env.LEADS_TAB || 'Leads';
 
-  // Fetch all tabs in parallel (Touchpoints + Website Inbounds + ROI tabs are optional — fail silently).
+  // Fetch all tabs in parallel (Touchpoints + Website Inbounds + ROI tabs are optional - fail silently).
   // ROI fetch uses a sentinel `null` for "tab doesn't exist" so we can distinguish missing tab from
   // empty tab (clients who created the tab but haven't entered deals yet should still see the ROI card).
   // Webinar registrants live on a SEPARATE sheet (Zoom export format),
@@ -437,7 +437,7 @@ export async function fetchDashboardRawData(
       const channel = getVal(row, mCols.channel);
       const bookedWith = getVal(row, mCols.bookedWith);
 
-      // Fleet size — only parse when the sheet has the column; allow numeric strings
+      // Fleet size - only parse when the sheet has the column; allow numeric strings
       // with commas (e.g. "1,200"). Blank / non-numeric cells are left undefined so
       // older rows captured before the column existed don't drag the average to zero.
       let fleetSize: number | undefined;
@@ -528,7 +528,7 @@ export async function fetchDashboardRawData(
   // every status (e.g. myBasePay wants to see chronological activity regardless
   // of open/closed).
   //
-  // Missing / unparseable dates sink to the bottom of their bucket — otherwise
+  // Missing / unparseable dates sink to the bottom of their bucket - otherwise
   // `new Date('').getTime() === NaN` and any comparison involving that NaN
   // returns NaN, which JS's sort treats inconsistently and can split the list
   // into two independently-sorted blocks around the offending row.
@@ -666,9 +666,9 @@ export async function fetchDashboardRawData(
   // --- Process ROI ---
   // Schema: Opportunity | Pipeline Value | Contract Value | Notes | <Mon YYYY> | <Mon YYYY> | ...
   // We emit two outputs:
-  //   1. roiEntries (legacy) — flat revenue/pipeline per row, used by the
+  //   1. roiEntries (legacy) - flat revenue/pipeline per row, used by the
   //      auto-generated revenueNote / pipelineNote subtitles.
-  //   2. roiOpportunities — one entry per sheet row with raw monthly amounts
+  //   2. roiOpportunities - one entry per sheet row with raw monthly amounts
   //      preserved so the dashboard can compute Billed vs To Be Billed.
   const roiEntries: RoiEntry[] = [];
   const roiOpportunities: RoiOpportunity[] = [];
@@ -685,9 +685,11 @@ export async function fetchDashboardRawData(
     const totalContractValueIdx = findIdx(['total contract value', 'total contract', 'lifetime contract value', 'total value']);
     const notesIdx = findIdx(['notes', 'note', 'comment']);
     const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
+    const firstMeetingDateIdx = findIdx(['first meeting date', 'first meeting', 'first meeting sat', 'first meeting sat date', 'meeting date']);
+    const firstBilledDateIdx = findIdx(['first billed date', 'first billed', 'first invoice date', 'first invoice', 'first revenue date', 'billed date']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
-      if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx) continue;
+      if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx || c === firstMeetingDateIdx || c === firstBilledDateIdx) continue;
       const parsed = parseMonthYearHeader(lowerHeaders[c]);
       if (parsed) monthCols.push({ idx: c, ...parsed });
     }
@@ -732,26 +734,31 @@ export async function fetchDashboardRawData(
         });
       }
 
-      // Derived fields (totalContract / billed / toBeBilled) are computed in
+      // Derived fields (totalContract / billed / cycleMonths) are computed in
       // computeOpportunities. Initialise to zero here.
       const typeOfService = typeOfServiceIdx >= 0 ? getVal(row, typeOfServiceIdx) : '';
+      const firstMeetingRaw = firstMeetingDateIdx >= 0 ? getVal(row, firstMeetingDateIdx) : '';
+      const firstBilledRaw = firstBilledDateIdx >= 0 ? getVal(row, firstBilledDateIdx) : '';
+      const firstMeetingDate = firstMeetingRaw ? parseDate(firstMeetingRaw) : null;
+      const firstBilledDate = firstBilledRaw ? parseDate(firstBilledRaw) : null;
       roiOpportunities.push({
         opportunity: deal,
         ...(pipelineAmount !== undefined && pipelineAmount > 0 ? { pipelineValue: pipelineAmount } : {}),
         ...(annualContractAmount !== undefined && annualContractAmount > 0 ? { annualContractValue: annualContractAmount } : {}),
         ...(totalContractAmount !== undefined && totalContractAmount > 0 ? { totalContractValue: totalContractAmount } : {}),
+        ...(firstMeetingDate ? { firstMeetingDate } : {}),
+        ...(firstBilledDate ? { firstBilledDate } : {}),
         monthly,
         ...(notes ? { notes } : {}),
         ...(typeOfService ? { typeOfService } : {}),
         totalContract: 0,
         billed: 0,
-        toBeBilled: 0,
       });
     }
   }
 
   // --- Process Lytx Inbounds ---
-  // Optional — only fetched when LYTX_INBOUNDS_SHEET_ID is set. Separate sheet.
+  // Optional - only fetched when LYTX_INBOUNDS_SHEET_ID is set. Separate sheet.
   const lytxInbounds: LytxInboundRecord[] = [];
   if (lytxInboundRows.length > 1) {
     const lCols = detectColumns(lytxInboundRows[0], LYTX_INBOUND_COLUMN_MATCHERS);

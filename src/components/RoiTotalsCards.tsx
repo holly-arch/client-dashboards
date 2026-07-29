@@ -10,13 +10,18 @@ function formatGBP(n: number): string {
   return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`;
 }
 
+function formatPct(n: number): string {
+  if (!n || !isFinite(n)) return '0%';
+  return `${n.toFixed(1)}%`;
+}
+
 export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
       <MetricCard
-        title="Total 12-Month CV"
+        title={totals.annual12moContractLabel}
         value={formatGBP(totals.annual12moContract)}
-        subtitle="Sum of annual contract values"
+        subtitle="Contract value in period"
         borderColorHex="#ff2eeb"
         icon={
           <svg className="w-5 h-5" style={{ color: '#ff2eeb' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -58,6 +63,17 @@ export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
           <svg className="w-5 h-5" style={{ color: '#f59e0b' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path d="M3 3v18h18" />
             <path d="M7 14l4-4 4 4 5-5" />
+          </svg>
+        }
+      />
+      <MetricCard
+        title="Meeting to Closed"
+        value={formatPct(totals.conversionPct)}
+        subtitle={`${totals.closedCount} closed / ${totals.meetingsBooked} booked`}
+        borderColorHex="#27ccd7"
+        icon={
+          <svg className="w-5 h-5" style={{ color: '#27ccd7' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path d="M20 6L9 17l-5-5" />
           </svg>
         }
       />

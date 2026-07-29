@@ -73,8 +73,8 @@ function deriveAvailableQuarters(meetings: MeetingRecord[], leads: LeadRecord[])
 }
 
 export function isInRange(dateStr: string, range: { start: Date; end: Date } | null): boolean {
-  if (!range) return true; // All Time — include everything
-  if (!dateStr) return false; // No date — only show in All Time
+  if (!range) return true; // All Time - include everything
+  if (!dateStr) return false; // No date - only show in All Time
   const d = new Date(dateStr);
   return d >= range.start && d <= range.end;
 }
@@ -129,12 +129,26 @@ function monthInPeriod(year: number, month: number, period: TimePeriod): boolean
   return false;
 }
 
+// Months between two ISO dates, rounded to the nearest whole month. Used for
+// the ROI cycle column (first meeting sat -> first invoice billed). Returns
+// undefined when either date is missing or unparseable.
+const AVG_MONTH_MS = 30.4375 * 24 * 60 * 60 * 1000; // 365.25 / 12 days in ms
+function monthsBetween(a: string | undefined, b: string | undefined): number | undefined {
+  if (!a || !b) return undefined;
+  const aMs = new Date(a).getTime();
+  const bMs = new Date(b).getTime();
+  if (isNaN(aMs) || isNaN(bMs)) return undefined;
+  const diff = Math.abs(bMs - aMs);
+  return Math.max(0, Math.round(diff / AVG_MONTH_MS));
+}
+
 // One sheet row = one opportunity. Same-name rows stay distinct so a deal that
 // has both a Pipeline Value row and a Contract row (e.g. Trust Hire's YTL)
 // renders as two separate rows on the dashboard (one in Revenue, one in
-// Pipeline). billed / toBeBilled count only the monthly cells whose (year,
-// month) falls inside the selected period AND that are past-or-current (for
-// billed) or future (for toBeBilled), using today's month/year as the cutoff.
+// Pipeline). Billed counts only the monthly cells whose (year, month) falls
+// inside the selected period AND are past-or-current (using today as the
+// cutoff). Cycle counts whole months between First Meeting Date and First
+// Billed Date, populated from the sheet.
 function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOpportunity[] {
   const now = new Date();
   const todayKey = now.getFullYear() * 12 + now.getMonth();
@@ -145,25 +159,43 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
     const pastSum = inPeriod
       .filter((m) => m.year * 12 + m.month <= todayKey)
       .reduce((s, m) => s + m.amount, 0);
-    const futureSum = inPeriod
-      .filter((m) => m.year * 12 + m.month > todayKey)
-      .reduce((s, m) => s + m.amount, 0);
-    // Total Contract prefers the lifetime figure; falls back to annual, then
-    // to sum of monthly amounts for legacy rows where neither column is set.
     const totalContract = r.totalContractValue ?? r.annualContractValue ?? monthsSum;
+    const cycleMonths = monthsBetween(r.firstMeetingDate, r.firstBilledDate);
     return {
       ...r,
       totalContract,
       billed: pastSum,
-      toBeBilled: futureSum,
+      ...(cycleMonths !== undefined ? { cycleMonths } : {}),
     };
   });
 
-  // Biggest deals first — pipeline-only rows still surface in the ordering.
+  // Biggest deals first. Pipeline-only rows still surface in the ordering.
   computed.sort((a, b) =>
     (b.totalContract + (b.pipelineValue ?? 0)) - (a.totalContract + (a.pipelineValue ?? 0)),
   );
   return computed;
+}
+
+// Human label for the "Total {period} CV" tile. "all_time" keeps the legacy
+// "Total 12-Month CV" wording so the default view is unchanged.
+function periodLabelForCv(period: TimePeriod): string {
+  if (period === 'all_time') return 'Total 12-Month CV';
+  const q = period.match(QUARTER_PATTERN);
+  if (q) return `Total Q${q[1]} ${q[2]} CV`;
+  switch (period) {
+    case 'this_week': return 'Total This Week CV';
+    case 'this_month': return 'Total This Month CV';
+    case 'this_quarter': return 'Total This Quarter CV';
+    case 'ytd': return 'Total YTD CV';
+  }
+  return 'Total CV';
+}
+
+// "Closed" = any opportunity that has landed a signed contract OR any billed
+// revenue. Used for the Meeting Booked -> Closed conversion tile.
+function isClosedOpportunity(o: RoiOpportunity): boolean {
+  const contract = o.totalContractValue ?? o.annualContractValue ?? 0;
+  return contract > 0 || o.billed > 0;
 }
 
 export function buildRoiSummary(
@@ -171,17 +203,35 @@ export function buildRoiSummary(
   hasRoiTab: boolean,
   rawOpportunities: RoiOpportunity[] = [],
   period: TimePeriod = 'all_time',
+  meetingsBookedCount = 0,
 ): RoiSummary | undefined {
   if (!hasRoiTab) return undefined;
   const opportunities = computeOpportunities(rawOpportunities, period);
-  // Totals derived from the same opportunities[] array the per-client
-  // dashboards use, so the PTG group breakdown stays consistent with what
-  // each client's Revenue/Pipeline tables show.
+
+  // Period-aware 12-Month CV. all_time keeps the original "sum of
+  // annualContractValue" behaviour so the default view is unchanged. Any
+  // specific period sums the monthly cells that fall inside it.
+  const annual12moContract = period === 'all_time'
+    ? opportunities.reduce((s, o) => s + (o.annualContractValue ?? 0), 0)
+    : opportunities.reduce((s, o) => {
+        const inPeriod = o.monthly.filter((m) => monthInPeriod(m.year, m.month, period));
+        return s + inPeriod.reduce((ms, m) => ms + m.amount, 0);
+      }, 0);
+
+  const closedCount = opportunities.filter(isClosedOpportunity).length;
+  const conversionPct = meetingsBookedCount > 0
+    ? (closedCount / meetingsBookedCount) * 100
+    : 0;
+
   const totals: RoiTotals = {
-    annual12moContract: opportunities.reduce((s, o) => s + (o.annualContractValue ?? 0), 0),
+    annual12moContract,
+    annual12moContractLabel: periodLabelForCv(period),
     totalContractValue: opportunities.reduce((s, o) => s + (o.totalContractValue ?? o.annualContractValue ?? 0), 0),
     totalBilled: opportunities.reduce((s, o) => s + o.billed, 0),
     totalPipeline: opportunities.reduce((s, o) => s + (o.pipelineValue ?? 0), 0),
+    meetingsBooked: meetingsBookedCount,
+    closedCount,
+    conversionPct,
   };
   const revenueTotal = opportunities.reduce((s, o) => s + o.totalContract, 0);
   const pipelineTotal = totals.totalPipeline;
@@ -236,7 +286,7 @@ export function buildDashboardData(
   const projected = Math.round(upcoming * 0.8);
   const meetingsSat = attended + projected;
 
-  // Average fleet size — only computed for sheets that capture the column.
+  // Average fleet size - only computed for sheets that capture the column.
   // Uses the full meeting set (not the time-filtered one) so the figure
   // represents the lifetime average and stays stable when the user clicks
   // between time-period pills.
@@ -260,18 +310,18 @@ export function buildDashboardData(
     ...(avgFleetSize !== undefined ? { avgFleetSize } : {}),
   };
 
-  // Filter and sum touchpoints if provided — only include channels that were
+  // Filter and sum touchpoints if provided - only include channels that were
   // actually present on the sheet (some clients only track Calls, for example).
   //
   // A touchpoint row represents an entire 7-day span (Sun-Sat or Mon-Sun,
   // whichever the client's sheet uses), not a single day. So a row "in range"
-  // is one whose 7-day span overlaps the selected period — not just one whose
+  // is one whose 7-day span overlaps the selected period - not just one whose
   // start date sits inside it. Without this, a Sunday-dated row for the
   // current week gets excluded by This Week (starts Monday) and This Month
   // (starts on the 1st) because the point comparison fails.
   //
   // Also hide the card entirely when the selected period starts BEFORE the
-  // earliest week's END — otherwise a "This Year"-style filter would silently
+  // earliest week's END - otherwise a "This Year"-style filter would silently
   // underreport by summing only the weeks that happen to be filled in and
   // ignoring the un-tracked ones.
   let touchpoints: { calls?: number; linkedin?: number; email?: number } | undefined;
@@ -313,10 +363,11 @@ export function buildDashboardData(
   // is stable regardless of which period is currently selected.
   const availableQuarters = deriveAvailableQuarters(meetings, leads);
 
-  // ROI summary — Annual / Total / Pipeline totals are time-independent and
-  // ignore `period`. Billed / To Be Billed honour `period` so the ROI tab's
-  // time filter can scope billing to a specific quarter / YTD / etc.
-  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false, roiOpportunities ?? [], period);
+  // ROI summary. Total Contract Value / Pipeline stay time-independent. Billed
+  // and the new 12-Month CV honour `period` so the ROI tab's time filter
+  // scopes them to the selected quarter / YTD / etc. Meetings-booked count
+  // is passed in so the summary can compute the Meeting -> Closed conversion.
+  const roi = buildRoiSummary(roiEntries ?? [], hasRoiTab ?? false, roiOpportunities ?? [], period, metrics.meetingsBooked);
 
   return {
     meetings: filteredMeetings,
