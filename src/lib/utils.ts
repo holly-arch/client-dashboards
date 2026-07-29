@@ -207,11 +207,15 @@ function periodLabelForCv(period: TimePeriod): string {
   return 'Total CV';
 }
 
-// "Closed" = any opportunity that has landed a signed contract OR any billed
-// revenue. Used for the Meeting Booked -> Closed conversion tile.
-function isClosedOpportunity(o: RoiOpportunity): boolean {
-  const contract = o.totalContractValue ?? o.annualContractValue ?? 0;
-  return contract > 0 || o.billed > 0;
+// "Closed" = the deal has actually been invoiced. Firm signal: firstBilledDate
+// is set AND on or before today. A contract value on its own doesn't count -
+// nothing's landed until real money has been billed. First Billed Date can be
+// either an explicit sheet column or the earliest monthly cell with a positive
+// amount (computed in deriveFirstBilledFromMonthly).
+function isClosedOpportunity(o: RoiOpportunity, todayMs: number): boolean {
+  if (!o.firstBilledDate) return false;
+  const billedMs = new Date(o.firstBilledDate).getTime();
+  return !isNaN(billedMs) && billedMs <= todayMs;
 }
 
 export function buildRoiSummary(
@@ -234,7 +238,8 @@ export function buildRoiSummary(
         return s + inPeriod.reduce((ms, m) => ms + m.amount, 0);
       }, 0);
 
-  const closedCount = opportunities.filter(isClosedOpportunity).length;
+  const todayMs = Date.now();
+  const closedCount = opportunities.filter((o) => isClosedOpportunity(o, todayMs)).length;
   const conversionPct = meetingsBookedCount > 0
     ? (closedCount / meetingsBookedCount) * 100
     : 0;
