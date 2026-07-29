@@ -685,7 +685,7 @@ export async function fetchDashboardRawData(
     const totalContractValueIdx = findIdx(['total contract value', 'total contract', 'lifetime contract value', 'total value']);
     const notesIdx = findIdx(['notes', 'note', 'comment']);
     const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
-    const firstMeetingDateIdx = findIdx(['first meeting date', 'first meeting', 'first meeting sat', 'first meeting sat date', 'meeting date']);
+    const firstMeetingDateIdx = findIdx(['first meeting date', 'first meeting', 'first meeting sat', 'first meeting sat date', 'meeting date', 'date booked', 'meeting booked', 'meeting booked date']);
     const firstBilledDateIdx = findIdx(['first billed date', 'first billed', 'first invoice date', 'first invoice', 'first revenue date', 'billed date']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
