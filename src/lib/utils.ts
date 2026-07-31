@@ -192,10 +192,9 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
   return computed;
 }
 
-// Human label for the "Total {period} CV" tile. "all_time" keeps the legacy
-// "Total 12-Month CV" wording so the default view is unchanged.
+// Human label for the "Total {period} CV" tile. Reflects the current filter.
 function periodLabelForCv(period: TimePeriod): string {
-  if (period === 'all_time') return 'Total 12-Month CV';
+  if (period === 'all_time') return 'Total All Time Contract Value';
   const q = period.match(QUARTER_PATTERN);
   if (q) return `Total Q${q[1]} ${q[2]} CV`;
   switch (period) {
