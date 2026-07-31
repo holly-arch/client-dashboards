@@ -265,7 +265,7 @@ export default function GroupDashboard() {
 
         {activeTab === 'roi' && data.aggregate.roi && (
           <>
-            <RoiTotalsCards totals={data.aggregate.roi.totals} showConversion={false} />
+            <RoiTotalsCards totals={data.aggregate.roi.totals} />
             <GroupRoiTable clients={data.clients} />
           </>
         )}
