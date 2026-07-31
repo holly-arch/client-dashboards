@@ -3,6 +3,9 @@ import MetricCard from './MetricCard';
 
 interface RoiTotalsCardsProps {
   totals: RoiTotals;
+  // Group dashboard opts out - the aggregated conversion figure doesn't
+  // mean much when totals span multiple clients with different pipelines.
+  showConversion?: boolean;
 }
 
 function formatGBP(n: number): string {
@@ -15,9 +18,10 @@ function formatPct(n: number): string {
   return `${n.toFixed(1)}%`;
 }
 
-export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
+export default function RoiTotalsCards({ totals, showConversion = true }: RoiTotalsCardsProps) {
+  const gridCols = showConversion ? 'lg:grid-cols-5' : 'lg:grid-cols-4';
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+    <div className={`grid grid-cols-2 ${gridCols} gap-3 md:gap-4`}>
       <MetricCard
         title={totals.annual12moContractLabel}
         value={formatGBP(totals.annual12moContract)}
@@ -66,17 +70,19 @@ export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
           </svg>
         }
       />
-      <MetricCard
-        title="Meeting to Closed"
-        value={formatPct(totals.conversionPct)}
-        subtitle={`${totals.closedCount} closed / ${totals.meetingsBooked} booked`}
-        borderColorHex="#27ccd7"
-        icon={
-          <svg className="w-5 h-5" style={{ color: '#27ccd7' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        }
-      />
+      {showConversion && (
+        <MetricCard
+          title="Meeting to Closed"
+          value={formatPct(totals.conversionPct)}
+          subtitle={`${totals.closedCount} closed / ${totals.meetingsBooked} booked`}
+          borderColorHex="#27ccd7"
+          icon={
+            <svg className="w-5 h-5" style={{ color: '#27ccd7' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          }
+        />
+      )}
     </div>
   );
 }
