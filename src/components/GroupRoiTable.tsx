@@ -33,7 +33,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
         pipeline: t?.totalPipeline ?? 0,
         deals: c.data.roi?.opportunities.length ?? 0,
         conversion: t?.conversionPct ?? 0,
-        grossMargin: t?.totalGrossMargin ?? 0,
+        grossMargin: t?.totalBilledGrossMargin ?? 0,
         hasMargin: !!t?.hasGrossMargin,
       };
     })
@@ -72,7 +72,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <th className="text-right py-2 pr-3 font-medium">Annual Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Total Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Billed</th>
-              {hasAnyMargin && <th className="text-right py-2 pr-3 font-medium whitespace-nowrap">Gross Margin</th>}
+              {hasAnyMargin && <th className="text-right py-2 pr-3 font-medium whitespace-nowrap">Billed Gross Margin</th>}
               <th className="text-right py-2 pr-3 font-medium">Pipeline</th>
               <th className="text-right py-2 pr-3 font-medium">Conv %</th>
               <th className="text-right py-2 font-medium"># Opps</th>
@@ -121,7 +121,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <span className="text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(r.billed)}</span>
               {hasAnyMargin && (
                 <>
-                  <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                  <span style={{ color: 'var(--color-text-faint)' }}>Billed Gross Margin</span>
                   <span className="text-right tabular-nums" style={{ color: '#a78bfa' }}>{r.hasMargin ? fmt(r.grossMargin) : '-'}</span>
                 </>
               )}
@@ -145,7 +145,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
             <span className="text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</span>
             {hasAnyMargin && (
               <>
-                <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                <span style={{ color: 'var(--color-text-faint)' }}>Billed Gross Margin</span>
                 <span className="text-right tabular-nums font-bold" style={{ color: '#a78bfa' }}>{fmt(totals.grossMargin)}</span>
               </>
             )}

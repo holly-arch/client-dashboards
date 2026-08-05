@@ -687,7 +687,7 @@ export async function fetchDashboardRawData(
     const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
     const firstMeetingDateIdx = findIdx(['first meeting date', 'first meeting', 'first meeting sat', 'first meeting sat date', 'meeting date', 'date booked', 'meeting booked', 'meeting booked date']);
     const firstBilledDateIdx = findIdx(['first billed date', 'first billed', 'first invoice date', 'first invoice', 'first revenue date', 'billed date']);
-    const grossMarginIdx = findIdx(['average gross margin', 'avg gross margin', 'gross margin', 'margin']);
+    const grossMarginIdx = findIdx(['total contract value gross margin', 'total contract gross margin', 'contract value gross margin', 'average gross margin', 'avg gross margin', 'gross margin', 'margin']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
       if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx || c === firstMeetingDateIdx || c === firstBilledDateIdx || c === grossMarginIdx) continue;
@@ -750,7 +750,7 @@ export async function fetchDashboardRawData(
         ...(totalContractAmount !== undefined && totalContractAmount > 0 ? { totalContractValue: totalContractAmount } : {}),
         ...(firstMeetingDate ? { firstMeetingDate } : {}),
         ...(firstBilledDate ? { firstBilledDate } : {}),
-        ...(grossMarginAmount !== undefined && grossMarginAmount > 0 ? { averageGrossMargin: grossMarginAmount } : {}),
+        ...(grossMarginAmount !== undefined && grossMarginAmount > 0 ? { totalContractValueGrossMargin: grossMarginAmount } : {}),
         monthly,
         ...(notes ? { notes } : {}),
         ...(typeOfService ? { typeOfService } : {}),

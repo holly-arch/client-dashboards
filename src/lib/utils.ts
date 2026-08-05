@@ -177,20 +177,19 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
     const firstBilledDate = r.firstBilledDate ?? deriveFirstBilledFromMonthly(r.monthly);
     const cycleMonths = monthsBetween(r.firstMeetingDate, firstBilledDate);
 
-    // Gross margin rate is implicit in the sheet: rate = averageGrossMargin / totalContractValue.
-    // Applying that rate to any period's billed figure gives the period-aware margin.
-    // all_time uses the sheet value verbatim to avoid rounding drift on partial monthly data.
+    // Recover the implicit margin rate from the sheet:
+    //   rate = totalContractValueGrossMargin / totalContractValue
+    // Applied to the period's billed figure to get the "billed" margin - the
+    // profit on money actually invoiced so far in the selected window. All Time
+    // uses billed-to-date (sum of every past monthly cell) × rate, so summing
+    // all quarters equals the All Time figure.
     const rateBase = r.totalContractValue ?? r.annualContractValue;
-    const grossMarginRate = r.averageGrossMargin !== undefined && rateBase && rateBase > 0
-      ? r.averageGrossMargin / rateBase
+    const grossMarginRate = r.totalContractValueGrossMargin !== undefined && rateBase && rateBase > 0
+      ? r.totalContractValueGrossMargin / rateBase
       : undefined;
-    const grossMarginInPeriod = r.averageGrossMargin === undefined
-      ? undefined
-      : period === 'all_time'
-        ? r.averageGrossMargin
-        : grossMarginRate !== undefined
-          ? pastSum * grossMarginRate
-          : undefined;
+    const billedGrossMarginInPeriod = grossMarginRate !== undefined
+      ? pastSum * grossMarginRate
+      : undefined;
 
     return {
       ...r,
@@ -199,7 +198,7 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
       ...(firstBilledDate ? { firstBilledDate } : {}),
       ...(cycleMonths !== undefined ? { cycleMonths } : {}),
       ...(grossMarginRate !== undefined ? { grossMarginRate } : {}),
-      ...(grossMarginInPeriod !== undefined ? { grossMarginInPeriod } : {}),
+      ...(billedGrossMarginInPeriod !== undefined ? { billedGrossMarginInPeriod } : {}),
     };
   });
 
@@ -212,7 +211,7 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
 
 // Human label for the "Total {period} CV" tile. Reflects the current filter.
 function periodLabelForCv(period: TimePeriod): string {
-  if (period === 'all_time') return 'Total All Time Contract Value';
+  if (period === 'all_time') return 'Annual Contract Value';
   const q = period.match(QUARTER_PATTERN);
   if (q) return `Total Q${q[1]} ${q[2]} CV`;
   switch (period) {
@@ -261,16 +260,16 @@ export function buildRoiSummary(
     ? (closedCount / meetingsBookedCount) * 100
     : 0;
 
-  // Gross margin totals. Only opps whose sheet has an Average Gross Margin
-  // cell contribute. Average is per-opp mean across the same set (opps that
-  // *have* a margin rate but happen to have zero period billing still count
-  // as £0 in the mean - otherwise the average balloons when only 1-2 opps
-  // have billed in the current quarter).
-  const marginOpps = opportunities.filter((o) => o.averageGrossMargin !== undefined);
-  const totalGrossMargin = marginOpps.reduce((s, o) => s + (o.grossMarginInPeriod ?? 0), 0);
-  const avgGrossMarginPerOpp = marginOpps.length > 0
-    ? totalGrossMargin / marginOpps.length
-    : 0;
+  // Two distinct gross-margin totals - both only count opps with a rate on the
+  // sheet.
+  //   totalContractValueGrossMargin: static, ignores the filter. Sum of the
+  //     sheet column - "projected profit on the full signed contract".
+  //   totalBilledGrossMargin: period-aware. Sum of billed(period) × rate -
+  //     "profit on money actually landed within the filter". Sum of quarters
+  //     equals All Time.
+  const marginOpps = opportunities.filter((o) => o.totalContractValueGrossMargin !== undefined);
+  const totalContractValueGrossMargin = marginOpps.reduce((s, o) => s + (o.totalContractValueGrossMargin ?? 0), 0);
+  const totalBilledGrossMargin = marginOpps.reduce((s, o) => s + (o.billedGrossMarginInPeriod ?? 0), 0);
   const hasGrossMargin = marginOpps.length > 0;
 
   const totals: RoiTotals = {
@@ -282,8 +281,8 @@ export function buildRoiSummary(
     meetingsBooked: meetingsBookedCount,
     closedCount,
     conversionPct,
-    totalGrossMargin,
-    avgGrossMarginPerOpp,
+    totalContractValueGrossMargin,
+    totalBilledGrossMargin,
     hasGrossMargin,
   };
   const revenueTotal = opportunities.reduce((s, o) => s + o.totalContract, 0);
