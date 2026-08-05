@@ -176,12 +176,30 @@ function computeOpportunities(rows: RoiOpportunity[], period: TimePeriod): RoiOp
     const totalContract = r.totalContractValue ?? r.annualContractValue ?? monthsSum;
     const firstBilledDate = r.firstBilledDate ?? deriveFirstBilledFromMonthly(r.monthly);
     const cycleMonths = monthsBetween(r.firstMeetingDate, firstBilledDate);
+
+    // Gross margin rate is implicit in the sheet: rate = averageGrossMargin / totalContractValue.
+    // Applying that rate to any period's billed figure gives the period-aware margin.
+    // all_time uses the sheet value verbatim to avoid rounding drift on partial monthly data.
+    const rateBase = r.totalContractValue ?? r.annualContractValue;
+    const grossMarginRate = r.averageGrossMargin !== undefined && rateBase && rateBase > 0
+      ? r.averageGrossMargin / rateBase
+      : undefined;
+    const grossMarginInPeriod = r.averageGrossMargin === undefined
+      ? undefined
+      : period === 'all_time'
+        ? r.averageGrossMargin
+        : grossMarginRate !== undefined
+          ? pastSum * grossMarginRate
+          : undefined;
+
     return {
       ...r,
       totalContract,
       billed: pastSum,
       ...(firstBilledDate ? { firstBilledDate } : {}),
       ...(cycleMonths !== undefined ? { cycleMonths } : {}),
+      ...(grossMarginRate !== undefined ? { grossMarginRate } : {}),
+      ...(grossMarginInPeriod !== undefined ? { grossMarginInPeriod } : {}),
     };
   });
 
@@ -243,6 +261,18 @@ export function buildRoiSummary(
     ? (closedCount / meetingsBookedCount) * 100
     : 0;
 
+  // Gross margin totals. Only opps whose sheet has an Average Gross Margin
+  // cell contribute. Average is per-opp mean across the same set (opps that
+  // *have* a margin rate but happen to have zero period billing still count
+  // as £0 in the mean - otherwise the average balloons when only 1-2 opps
+  // have billed in the current quarter).
+  const marginOpps = opportunities.filter((o) => o.averageGrossMargin !== undefined);
+  const totalGrossMargin = marginOpps.reduce((s, o) => s + (o.grossMarginInPeriod ?? 0), 0);
+  const avgGrossMarginPerOpp = marginOpps.length > 0
+    ? totalGrossMargin / marginOpps.length
+    : 0;
+  const hasGrossMargin = marginOpps.length > 0;
+
   const totals: RoiTotals = {
     annual12moContract,
     annual12moContractLabel: periodLabelForCv(period),
@@ -252,6 +282,9 @@ export function buildRoiSummary(
     meetingsBooked: meetingsBookedCount,
     closedCount,
     conversionPct,
+    totalGrossMargin,
+    avgGrossMarginPerOpp,
+    hasGrossMargin,
   };
   const revenueTotal = opportunities.reduce((s, o) => s + o.totalContract, 0);
   const pipelineTotal = totals.totalPipeline;

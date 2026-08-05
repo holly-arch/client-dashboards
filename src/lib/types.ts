@@ -80,6 +80,7 @@ export interface RoiOpportunity {
   totalContractValue?: number; // Lifetime value over the full contract duration
   firstMeetingDate?: string;   // ISO date of the first meeting sat for this opportunity
   firstBilledDate?: string;    // ISO date of the first invoice / revenue landed
+  averageGrossMargin?: number; // Sheet-computed: TotalContractValue * client-agreed margin rate (per service type)
   monthly: { year: number; month: number; amount: number }[]; // month is 0-indexed
   notes?: string;
   typeOfService?: string;
@@ -87,6 +88,8 @@ export interface RoiOpportunity {
   totalContract: number;       // Prefers totalContractValue, falls back to annualContractValue, then to sum of monthly
   billed: number;              // Period-filtered: monthly cells in range AND <= today
   cycleMonths?: number;        // Rounded months between firstMeetingDate and firstBilledDate
+  grossMarginRate?: number;    // Derived: averageGrossMargin / totalContractValue. Used to apply the same rate to any period's billing.
+  grossMarginInPeriod?: number;// Period-aware: on all_time = averageGrossMargin as-is; on a specific period = billed(period) * grossMarginRate.
 }
 
 export interface RoiTotals {
@@ -98,6 +101,9 @@ export interface RoiTotals {
   meetingsBooked: number;             // Passed in from DashboardMetrics - total meetings booked in the current period
   closedCount: number;                // Opportunities with a signed contract value OR any billed revenue
   conversionPct: number;              // closedCount / meetingsBooked * 100 - 0 when meetingsBooked is 0
+  totalGrossMargin: number;           // Sum of grossMarginInPeriod across opps (period-aware)
+  avgGrossMarginPerOpp: number;       // Mean of grossMarginInPeriod across opps that have a rate (period-aware)
+  hasGrossMargin: boolean;            // True when at least one opp has an Average Gross Margin cell on the sheet
 }
 
 export interface RoiSummary {

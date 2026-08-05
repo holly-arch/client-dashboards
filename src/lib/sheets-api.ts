@@ -687,9 +687,10 @@ export async function fetchDashboardRawData(
     const typeOfServiceIdx = findIdx(['type of service', 'service type', 'service']);
     const firstMeetingDateIdx = findIdx(['first meeting date', 'first meeting', 'first meeting sat', 'first meeting sat date', 'meeting date', 'date booked', 'meeting booked', 'meeting booked date']);
     const firstBilledDateIdx = findIdx(['first billed date', 'first billed', 'first invoice date', 'first invoice', 'first revenue date', 'billed date']);
+    const grossMarginIdx = findIdx(['average gross margin', 'avg gross margin', 'gross margin', 'margin']);
     const monthCols: { idx: number; year: number; month: number }[] = [];
     for (let c = 0; c < lowerHeaders.length; c++) {
-      if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx || c === firstMeetingDateIdx || c === firstBilledDateIdx) continue;
+      if (c === opportunityIdx || c === pipelineValueIdx || c === annualContractValueIdx || c === totalContractValueIdx || c === notesIdx || c === typeOfServiceIdx || c === firstMeetingDateIdx || c === firstBilledDateIdx || c === grossMarginIdx) continue;
       const parsed = parseMonthYearHeader(lowerHeaders[c]);
       if (parsed) monthCols.push({ idx: c, ...parsed });
     }
@@ -741,6 +742,7 @@ export async function fetchDashboardRawData(
       const firstBilledRaw = firstBilledDateIdx >= 0 ? getVal(row, firstBilledDateIdx) : '';
       const firstMeetingDate = firstMeetingRaw ? parseDate(firstMeetingRaw) : null;
       const firstBilledDate = firstBilledRaw ? parseDate(firstBilledRaw) : null;
+      const grossMarginAmount = grossMarginIdx >= 0 ? parseCurrency(getVal(row, grossMarginIdx)) : undefined;
       roiOpportunities.push({
         opportunity: deal,
         ...(pipelineAmount !== undefined && pipelineAmount > 0 ? { pipelineValue: pipelineAmount } : {}),
@@ -748,6 +750,7 @@ export async function fetchDashboardRawData(
         ...(totalContractAmount !== undefined && totalContractAmount > 0 ? { totalContractValue: totalContractAmount } : {}),
         ...(firstMeetingDate ? { firstMeetingDate } : {}),
         ...(firstBilledDate ? { firstBilledDate } : {}),
+        ...(grossMarginAmount !== undefined && grossMarginAmount > 0 ? { averageGrossMargin: grossMarginAmount } : {}),
         monthly,
         ...(notes ? { notes } : {}),
         ...(typeOfService ? { typeOfService } : {}),

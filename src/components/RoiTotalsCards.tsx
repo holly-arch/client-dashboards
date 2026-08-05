@@ -11,8 +11,10 @@ function formatGBP(n: number): string {
 }
 
 export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
+  // Grid grows from 4 tiles to 6 when gross margin data is present on any opp.
+  const gridCols = totals.hasGrossMargin ? 'md:grid-cols-3 lg:grid-cols-6' : 'lg:grid-cols-4';
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+    <div className={`grid grid-cols-2 ${gridCols} gap-3 md:gap-4`}>
       <MetricCard
         title={totals.annual12moContractLabel}
         value={formatGBP(totals.annual12moContract)}
@@ -61,6 +63,32 @@ export default function RoiTotalsCards({ totals }: RoiTotalsCardsProps) {
           </svg>
         }
       />
+      {totals.hasGrossMargin && (
+        <>
+          <MetricCard
+            title="Total Gross Margin"
+            value={formatGBP(totals.totalGrossMargin)}
+            subtitle="Margin banked in period"
+            borderColorHex="#a78bfa"
+            icon={
+              <svg className="w-5 h-5" style={{ color: '#a78bfa' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            }
+          />
+          <MetricCard
+            title="Avg Gross Margin / Opp"
+            value={formatGBP(totals.avgGrossMarginPerOpp)}
+            subtitle="Mean per opportunity"
+            borderColorHex="#c084fc"
+            icon={
+              <svg className="w-5 h-5" style={{ color: '#c084fc' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M3 12h4l3-9 4 18 3-9h4" />
+              </svg>
+            }
+          />
+        </>
+      )}
     </div>
   );
 }

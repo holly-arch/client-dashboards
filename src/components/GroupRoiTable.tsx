@@ -33,9 +33,13 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
         pipeline: t?.totalPipeline ?? 0,
         deals: c.data.roi?.opportunities.length ?? 0,
         conversion: t?.conversionPct ?? 0,
+        grossMargin: t?.totalGrossMargin ?? 0,
+        hasMargin: !!t?.hasGrossMargin,
       };
     })
     .sort((a, b) => (b.annual + b.pipeline) - (a.annual + a.pipeline));
+
+  const hasAnyMargin = rows.some((r) => r.hasMargin);
 
   const totals = rows.reduce(
     (s, r) => ({
@@ -44,8 +48,9 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
       billed: s.billed + r.billed,
       pipeline: s.pipeline + r.pipeline,
       deals: s.deals + r.deals,
+      grossMargin: s.grossMargin + r.grossMargin,
     }),
-    { annual: 0, total: 0, billed: 0, pipeline: 0, deals: 0 },
+    { annual: 0, total: 0, billed: 0, pipeline: 0, deals: 0, grossMargin: 0 },
   );
 
   return (
@@ -67,6 +72,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <th className="text-right py-2 pr-3 font-medium">Annual Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Total Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Billed</th>
+              {hasAnyMargin && <th className="text-right py-2 pr-3 font-medium whitespace-nowrap">Gross Margin</th>}
               <th className="text-right py-2 pr-3 font-medium">Pipeline</th>
               <th className="text-right py-2 pr-3 font-medium">Conv %</th>
               <th className="text-right py-2 font-medium"># Opps</th>
@@ -81,6 +87,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.annual)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.total)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(r.billed)}</td>
+                {hasAnyMargin && <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#a78bfa' }}>{r.hasMargin ? fmt(r.grossMargin) : '-'}</td>}
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>{fmt(r.pipeline)}</td>
                 <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtPct(r.conversion)}</td>
                 <td className="py-3 text-right tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{r.deals}</td>
@@ -91,6 +98,7 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.annual)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.total)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</td>
+              {hasAnyMargin && <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#a78bfa' }}>{fmt(totals.grossMargin)}</td>}
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.pipeline)}</td>
               <td />
               <td className="py-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{totals.deals}</td>
@@ -111,6 +119,12 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
               <span className="text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(r.total)}</span>
               <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
               <span className="text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(r.billed)}</span>
+              {hasAnyMargin && (
+                <>
+                  <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                  <span className="text-right tabular-nums" style={{ color: '#a78bfa' }}>{r.hasMargin ? fmt(r.grossMargin) : '-'}</span>
+                </>
+              )}
               <span style={{ color: 'var(--color-text-faint)' }}>Pipeline</span>
               <span className="text-right tabular-nums" style={{ color: 'var(--color-text-secondary)' }}>{fmt(r.pipeline)}</span>
               <span style={{ color: 'var(--color-text-faint)' }}>Conversion</span>
@@ -129,6 +143,12 @@ export default function GroupRoiTable({ clients }: GroupRoiTableProps) {
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.total)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
             <span className="text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</span>
+            {hasAnyMargin && (
+              <>
+                <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                <span className="text-right tabular-nums font-bold" style={{ color: '#a78bfa' }}>{fmt(totals.grossMargin)}</span>
+              </>
+            )}
             <span style={{ color: 'var(--color-text-faint)' }}>Pipeline</span>
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.pipeline)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}># Opportunities</span>

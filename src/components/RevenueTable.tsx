@@ -9,6 +9,11 @@ function fmt(n: number): string {
   return `£${n.toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
 }
 
+function fmtOptional(n: number | undefined): string {
+  if (n === undefined) return '-';
+  return fmt(n);
+}
+
 function fmtCycle(m: number | undefined): string {
   if (m === undefined) return '-';
   return `${m} mo`;
@@ -16,13 +21,15 @@ function fmtCycle(m: number | undefined): string {
 
 export default function RevenueTable({ opportunities }: RevenueTableProps) {
   const hasTypeOfService = opportunities.some((o) => !!o.typeOfService);
+  const hasGrossMargin = opportunities.some((o) => o.averageGrossMargin !== undefined);
   const totals = opportunities.reduce(
     (s, o) => ({
       annualContract: s.annualContract + (o.annualContractValue ?? 0),
       totalContract: s.totalContract + (o.totalContractValue ?? o.annualContractValue ?? 0),
       billed: s.billed + o.billed,
+      grossMargin: s.grossMargin + (o.grossMarginInPeriod ?? 0),
     }),
-    { annualContract: 0, totalContract: 0, billed: 0 },
+    { annualContract: 0, totalContract: 0, billed: 0, grossMargin: 0 },
   );
 
   return (
@@ -45,6 +52,7 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
               <th className="text-right py-2 pr-3 font-medium">Annual Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Total Contract</th>
               <th className="text-right py-2 pr-3 font-medium">Billed</th>
+              {hasGrossMargin && <th className="text-right py-2 pr-3 font-medium whitespace-nowrap">Gross Margin</th>}
               <th className="text-right py-2 font-medium">Cycle</th>
             </tr>
           </thead>
@@ -62,6 +70,7 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(annual)}</td>
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(total)}</td>
                   <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(o.billed)}</td>
+                  {hasGrossMargin && <td className="py-3 pr-3 text-right tabular-nums" style={{ color: '#a78bfa' }}>{fmtOptional(o.grossMarginInPeriod)}</td>}
                   <td className="py-3 text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtCycle(o.cycleMonths)}</td>
                 </tr>
               );
@@ -72,6 +81,7 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.annualContract)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.totalContract)}</td>
               <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</td>
+              {hasGrossMargin && <td className="py-3 pr-3 text-right tabular-nums font-bold" style={{ color: '#a78bfa' }}>{fmt(totals.grossMargin)}</td>}
               <td />
             </tr>
           </tbody>
@@ -95,6 +105,12 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
                 <span className="text-right tabular-nums" style={{ color: 'var(--color-text-primary)' }}>{fmt(total)}</span>
                 <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
                 <span className="text-right tabular-nums" style={{ color: '#4ade80' }}>{fmt(o.billed)}</span>
+                {hasGrossMargin && (
+                  <>
+                    <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                    <span className="text-right tabular-nums" style={{ color: '#a78bfa' }}>{fmtOptional(o.grossMarginInPeriod)}</span>
+                  </>
+                )}
                 <span style={{ color: 'var(--color-text-faint)' }}>Cycle</span>
                 <span className="text-right tabular-nums" style={{ color: '#27ccd7' }}>{fmtCycle(o.cycleMonths)}</span>
               </div>
@@ -110,6 +126,12 @@ export default function RevenueTable({ opportunities }: RevenueTableProps) {
             <span className="text-right tabular-nums font-bold" style={{ color: 'var(--color-text-primary)' }}>{fmt(totals.totalContract)}</span>
             <span style={{ color: 'var(--color-text-faint)' }}>Billed</span>
             <span className="text-right tabular-nums font-bold" style={{ color: '#4ade80' }}>{fmt(totals.billed)}</span>
+            {hasGrossMargin && (
+              <>
+                <span style={{ color: 'var(--color-text-faint)' }}>Gross Margin</span>
+                <span className="text-right tabular-nums font-bold" style={{ color: '#a78bfa' }}>{fmt(totals.grossMargin)}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
