@@ -256,12 +256,8 @@ export default function Dashboard() {
           return (
             <>
               <RoiTotalsCards totals={data.roi.totals} />
-              {(revenueRows.length > 0 || pipelineRows.length > 0) && (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                  {revenueRows.length > 0 && <div className="lg:col-span-2"><RevenueTable opportunities={revenueRows} /></div>}
-                  {pipelineRows.length > 0 && <div><PipelineDealsTable opportunities={pipelineRows} /></div>}
-                </div>
-              )}
+              {revenueRows.length > 0 && <RevenueTable opportunities={revenueRows} />}
+              {pipelineRows.length > 0 && <PipelineDealsTable opportunities={pipelineRows} />}
             </>
           );
         })()}
